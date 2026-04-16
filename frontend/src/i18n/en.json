@@ -1,0 +1,89 @@
+{
+  "hero": {
+    "badge": "v3.0 Global Automation Engine",
+    "title_1": "Turn Intent Into",
+    "title_2": "Execution — Instantly",
+    "subtitle_pro": "Execra transforms your ideas into real automation workflows with zero setup. Upload your screen recording and watch the magic happen.",
+    "subtitle_simple": "Automate your daily tasks with one tap. No coding needed. Execra works for everyone.",
+    "run_demo": "Run Live Demo",
+    "try_templates": "Try Templates"
+  },
+  "nav": {
+    "docs": "Docs",
+    "github": "GitHub",
+    "simple": "Simple",
+    "pro": "Pro",
+    "sovereign": "Data Status: Sovereign & Local",
+    "stealth": "Stealth Active",
+    "neural_xp": "Neural XP"
+  },
+  "control_plane": {
+    "title": "1. Control Plane",
+    "subtitle": "Input intent via Chat, Video, or preset flows.",
+    "nlp_label": "Natural Language Builder",
+    "placeholder": "e.g. Nav to Amazon, check iPhone 15 price, open Twitter and tweet it...",
+    "generate": "Generate Automation",
+    "synthesizing": "Synthesizing Pipeline...",
+    "video_label": "Record & Train (Video)",
+    "extract": "Extract & Process",
+    "shadow_record": "Shadow Record (Native)",
+    "recording": "Recording DOM Events...",
+    "context_label": "Massive Context Layer",
+    "analyze": "Analyze Complexity",
+    "ingesting": "Ingesting Architecture...",
+    "teach_me": "Teach Me (Shadow Learning)",
+    "teaching": "Learning Your Actions..."
+  },
+  "execution": {
+    "title": "2. Execution Engine",
+    "subtitle": "Visual AI-powered live execution & self-healing.",
+    "ready": "Ready to execute",
+    "run": "Run Workflow",
+    "download": "Download Script",
+    "schedule": "Schedule Cron Job"
+  },
+  "marketplace": {
+    "title": "Execra Marketplace",
+    "subtitle": "Discover, purchase, and deploy community-built cross-app automation templates."
+  },
+  "action_store": {
+    "title": "Action Store",
+    "subtitle": "Community-built one-tap automations. Install and use instantly.",
+    "install": "Install",
+    "publish": "Publish Your Action"
+  },
+  "swarm": {
+    "title": "Commander Control Plane",
+    "subtitle": "Deploy parallel AI agents across different domains. Each agent operates independently and reports back to the Hive Mind.",
+    "engage": "Engage Hive Mind",
+    "deploying": "Deploying Swarm...",
+    "thinking": "Deep Thinking Active",
+    "cognitive": "Cognitive Cycles"
+  },
+  "nexus": {
+    "title": "Nexus Command Center",
+    "status": "Status: Cross-Platform Orchestration Active"
+  },
+  "life_action": {
+    "title": "Automate Your Life",
+    "subtitle": "Complex tasks made simple. Just tap and Execra handles everything for you.",
+    "badge": "Life-Action Engine — One-Tap Automation",
+    "one_tap": "One Tap"
+  },
+  "inclusivity": {
+    "humanity": "Serving All Humanity",
+    "accessible": "Voice-First Accessible",
+    "sovereign": "Sovereign & Secure"
+  },
+  "footer": {
+    "cta": "Start Automating Now",
+    "run_first": "Run Your First Workflow",
+    "switch_pro": "Switch to Pro Mode",
+    "tagline": "Built for every human. Sovereign, Accessible, Automated."
+  },
+  "theme": {
+    "dark": "Dark",
+    "light": "Light"
+  },
+  "global_status": "Languages Synchronized. Dark/Light Mode Primed. Action Store Open."
+}
