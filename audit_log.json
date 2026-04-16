@@ -1,0 +1,44 @@
+[
+  {
+    "index": 0,
+    "timestamp": "2026-04-12T01:10:47.932Z",
+    "action": "arbitrage_route",
+    "data": {
+      "query": "Write a Python function to sort user data by timestamp",
+      "taskType": "code_generation",
+      "selectedModel": "claude-sonnet",
+      "savings": "40.0%"
+    },
+    "actor": "neural_arbitrage",
+    "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "hash": "2e656e678e24284cac5d3683ff333056a6352af6bb715bf54cca32497922d378"
+  },
+  {
+    "index": 1,
+    "timestamp": "2026-04-12T01:10:47.981Z",
+    "action": "arbitrage_route",
+    "data": {
+      "query": "ترجم هذا النص إلى الإنجليزية",
+      "taskType": "quick_tasks",
+      "selectedModel": "local-llama",
+      "savings": "100.0%"
+    },
+    "actor": "neural_arbitrage",
+    "previousHash": "2e656e678e24284cac5d3683ff333056a6352af6bb715bf54cca32497922d378",
+    "hash": "c7cb14432ab97c9bf24934665cf98d2e93f1e37d38eefe43786d17b7abf40f27"
+  },
+  {
+    "index": 2,
+    "timestamp": "2026-04-12T01:10:48.031Z",
+    "action": "arbitrage_route",
+    "data": {
+      "query": "Analyze this private document locally and securely",
+      "taskType": "reasoning",
+      "selectedModel": "claude-sonnet",
+      "savings": "40.0%"
+    },
+    "actor": "neural_arbitrage",
+    "previousHash": "c7cb14432ab97c9bf24934665cf98d2e93f1e37d38eefe43786d17b7abf40f27",
+    "hash": "94e36eba9fd9226c4ba55f0b014ddaebd04d559281196ef8d192afb188e93469"
+  }
+]

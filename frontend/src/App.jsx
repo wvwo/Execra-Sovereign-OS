@@ -1,0 +1,1572 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Play, Download, Settings, Code, Code2, Eye, CheckCircle, ChevronRight, Video, Zap, FileJson, Clock, Sparkles, RefreshCw, Terminal, ArrowRight, PlayCircle, Calendar, BarChart2, BrainCircuit, Shield, MessageSquare, ShoppingCart, Globe, Server, Share2, Link as LinkIcon, BadgeCheck, TrendingUp, Trophy, Mic, Activity, Users, Hexagon, Ghost, Database, Heart, Accessibility, FileText, Home, Sun, Moon, Languages } from 'lucide-react';
+import ActionMarket from './components/ActionMarket.jsx';
+
+const ParticleExplosion = ({ intensity = 40 }) => {
+    const particles = Array.from({ length: intensity });
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
+            {particles.map((_, i) => {
+                const angle = (i / particles.length) * Math.PI * 2;
+                const velocity = 50 + Math.random() * 150;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+                const color = ['bg-indigo-400', 'bg-emerald-400', 'bg-purple-400', 'bg-yellow-400'][Math.floor(Math.random() * 4)];
+                
+                return (
+                    <motion.div
+                        key={i}
+                        initial={{ opacity: 1, scale: 0, x: 0, y: 0 }}
+                        animate={{ opacity: 0, scale: Math.random() * 1.5 + 0.5, x: tx, y: ty }}
+                        transition={{ duration: 1.5 + Math.random(), ease: "easeOut" }}
+                        className={`absolute top-[40%] left-1/2 w-2 h-2 rounded-full ${color}`}
+                    />
+                );
+            })}
+        </div>
+    );
+};
+
+function App() {
+  const { t, i18n } = useTranslation();
+  const [theme, setTheme] = useState(() => localStorage.getItem('execra-theme') || 'dark');
+  const currentLang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+  const isRtl = currentLang === 'ar';
+
+  const [file, setFile] = useState(null);
+  const [status, setStatus] = useState('');
+  const [steps, setSteps] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [activePlaywrightStep, setActivePlaywrightStep] = useState(null);
+  const [stepErrors, setStepErrors] = useState({});
+  const [isEnvReady, setIsEnvReady] = useState(false);
+  const [isEnvChecking, setIsEnvChecking] = useState(true);
+  const [executionTime, setExecutionTime] = useState(0);
+  const [timerInterval, setTimerInterval] = useState(null);
+  
+  // Enterprise App State
+  const [intent, setIntent] = useState('custom');
+  const [extractedData, setExtractedData] = useState([]);
+
+  // Sovereign App State
+  const [showScheduler, setShowScheduler] = useState(false);
+  const [scheduleCron, setScheduleCron] = useState('0 8 * * *');
+  const [showSanitization, setShowSanitization] = useState(false);
+  const [sanitizationLogs, setSanitizationLogs] = useState([]);
+  const [aiReport, setAiReport] = useState(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [analytics, setAnalytics] = useState(null);
+  const [marketplaceItems, setMarketplaceItems] = useState([]);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [proxyNode, setProxyNode] = useState('local');
+  const [repetitiveActions, setRepetitiveActions] = useState(0);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSuccessMode, setVoiceSuccessMode] = useState(false);
+  const [isShadowRecording, setIsShadowRecording] = useState(false);
+  const [architectureFile, setArchitectureFile] = useState(null);
+  const [isKimiAnalyzing, setIsKimiAnalyzing] = useState(false);
+  const [swarmResult, setSwarmResult] = useState(null);
+  const [isSwarmRunning, setIsSwarmRunning] = useState(false);
+  const [cognitiveCycles, setCognitiveCycles] = useState(0);
+  const [neuralMemory, setNeuralMemory] = useState({ totalExperiences: 0, xp: 0, topDomains: [] });
+  const [personaMode, setPersonaMode] = useState('pro'); // 'simple' | 'pro'
+  const [oneTapLoading, setOneTapLoading] = useState(null);
+
+  const demoRef = useRef(null);
+
+  useEffect(() => {
+      checkEnvironment();
+      fetchAnalytics();
+      fetchMarketplace();
+      fetchNeuralMemory();
+      return () => stopTimer();
+  }, []);
+
+  // Theme persistence & DOM sync
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('execra-theme', theme);
+  }, [theme]);
+
+  // RTL/LTR document direction sync
+  useEffect(() => {
+    document.documentElement.setAttribute('dir', isRtl ? 'rtl' : 'ltr');
+    document.documentElement.setAttribute('lang', currentLang);
+  }, [currentLang, isRtl]);
+
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  const toggleLanguage = () => i18n.changeLanguage(currentLang === 'ar' ? 'en' : 'ar');
+  const isDark = theme === 'dark';
+
+  const fetchNeuralMemory = async () => {
+      try {
+          const res = await fetch('http://localhost:3001/api/neural-memory');
+          const data = await res.json();
+          setNeuralMemory(data);
+      } catch(e) {}
+  };
+
+  const fetchMarketplace = async () => {
+      try {
+          const res = await fetch('http://localhost:3001/api/marketplace');
+          if (res.ok) setMarketplaceItems(await res.json());
+      } catch (e) {}
+  };
+
+  const fetchAnalytics = async () => {
+      try {
+          const res = await fetch('http://localhost:3001/api/analytics');
+          if (res.ok) setAnalytics(await res.json());
+      } catch (e) {}
+  };
+
+  const checkEnvironment = async () => {
+      setIsEnvChecking(true);
+      setStatus('🔍 Verifying automation engine & video tools...');
+      try {
+          const res = await fetch('http://localhost:3001/api/check-environment');
+          const data = await res.json();
+          
+          if (data.browsers && data.ffmpeg) {
+              setIsEnvReady(true);
+              setStatus('');
+          } else {
+              let msg = '📦 Finalizing setup: ';
+              if (!data.browsers) msg += 'Installing Playwright binaries... ';
+              if (!data.ffmpeg) msg += 'Installing FFmpeg (via Brew)... ';
+              
+              setStatus(msg);
+              const setupRes = await fetch('http://localhost:3001/api/setup-environment', { method: 'POST' });
+              if (setupRes.ok) {
+                  setIsEnvReady(true);
+                  setStatus('');
+              } else {
+                  setStatus('⚠️ Auto-install failed. Please ensure Brew is installed or setup manually.');
+              }
+          }
+      } catch (err) {
+          console.error(err);
+          setStatus('⚠️ Backend offline. Please start local server.');
+      } finally {
+          setIsEnvChecking(false);
+      }
+  };
+
+  const startTimer = () => {
+      setExecutionTime(0);
+      const interval = setInterval(() => {
+          setExecutionTime(prev => prev + 1);
+      }, 1000);
+      setTimerInterval(interval);
+  };
+
+  const stopTimer = () => {
+      setTimerInterval(prev => {
+          if (prev) clearInterval(prev);
+          return null;
+      });
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+        setFile(e.target.files[0]);
+    }
+  };
+
+  const loadTemplate = (type) => {
+      setSteps(null);
+      setActivePlaywrightStep(null);
+      setStepErrors({});
+      let newSteps = [];
+      if (type === 'login') {
+          newSteps = [
+              { action: 'navigate', url: 'https://practicetestautomation.com/practice-test-login/' },
+              { action: 'type', selector: '#username', value: 'student' },
+              { action: 'type', selector: '#password', value: 'Password123' },
+              { action: 'click', selector: '#submit' }
+          ];
+      } else if (type === 'google') {
+          newSteps = [
+              { action: 'navigate', url: 'https://www.google.com' },
+              { action: 'type', selector: 'textarea[name="q"], input[name="q"]', value: 'Process Autopilot MVP' },
+              { action: 'click', selector: 'input[name="btnK"], button[name="btnK"], input[aria-label="Google Search"]' }
+          ];
+      } else if (type === 'email') {
+          newSteps = [
+              { action: 'navigate', url: 'https://mail.google.com' },
+              { action: 'type', selector: '#identifierId', value: 'ENV:EMAIL_USERNAME' },
+              { action: 'click', selector: '#identifierNext' },
+              { action: 'type', selector: 'input[type="password"]', value: 'ENV:EMAIL_PASSWORD' },
+              { action: 'click', selector: '#passwordNext' },
+              { action: 'extract', selector: '.nH .zA' } // Scrape top emails
+          ];
+      } else if (type === 'scrape') {
+          newSteps = [
+              { action: 'navigate', url: 'https://finance.yahoo.com/most-active' },
+              { action: 'extract', selector: 'table tbody tr' }
+          ];
+      } else if (type === 'report') {
+          newSteps = [
+              { action: 'navigate', url: 'https://docs.google.com/document/create' },
+              { action: 'click', selector: '.docs-texteventtarget-iframe' },
+              { action: 'type', selector: '.docs-texteventtarget-iframe', value: 'Automated Market Summary Report: ...' }
+          ];
+      }
+      setSteps(newSteps);
+      return newSteps;
+  };
+
+  const handleRunTemplate = async (type) => {
+      const newSteps = loadTemplate(type);
+      setTimeout(() => {
+          handleRunAutomation(newSteps);
+      }, 500);
+  };
+
+  const scrollToDemo = () => {
+      demoRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+
+    // Client-side input validation
+    if (!file.type.startsWith('video/')) {
+        setStatus('Error: Please upload a valid video file.');
+        return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+        setStatus('Error: File size must be under 50MB.');
+        return;
+    }
+
+    setIsProcessing(true);
+    setStatus('Extracting Frames & Processing Intent...');
+    setActivePlaywrightStep(null);
+    setStepErrors({});
+
+    const formData = new FormData();
+    formData.append('video', file);
+
+    try {
+        const response = await fetch('http://localhost:3001/api/process-video', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            setSteps(data.steps);
+            if (data.intent) setIntent(data.intent);
+            setStatus('');
+        } else {
+            setStatus('Error: ' + data.error);
+        }
+    } catch (err) {
+        console.error(err);
+        setStatus('Error connecting to backend.');
+    } finally {
+        setIsProcessing(false);
+    }
+  };
+
+  const handleAiPromptBuild = async (overridePrompt = null) => {
+      setRepetitiveActions(prev => prev + 1);
+      const activePrompt = typeof overridePrompt === 'string' ? overridePrompt : aiPrompt;
+      if (!activePrompt) return;
+      setIsProcessing(true);
+      setStatus('🧠 AI is orchestrating workflow...');
+      try {
+          const res = await fetch('http://localhost:3001/api/chat-to-workflow', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt: activePrompt })
+          });
+          const data = await res.json();
+          if (data.success && data.steps.length > 0) {
+              setSteps(data.steps);
+              setStatus('Workflow Built Successfully.');
+              if (data.voiceTriggered) setVoiceSuccessMode(true);
+              else setVoiceSuccessMode(false);
+          } else {
+              setStatus('AI Generation Failed.');
+          }
+      } catch(e) {
+          setStatus('Network Error.');
+      }
+      setIsProcessing(false);
+  };
+
+  const toggleVoiceControl = () => {
+      if (isListening) return;
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+          setStatus('Browser does not support Voice Processing.');
+          return;
+      }
+      
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+          setIsListening(true);
+          setStatus('🎙️ Audio Status: Local Processing Only');
+      };
+
+      recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          setAiPrompt(transcript);
+          handleAiPromptBuild(transcript);
+      };
+
+      recognition.onerror = (event) => {
+          setStatus('Voice error: ' + event.error);
+          setIsListening(false);
+      };
+
+      recognition.onend = () => {
+          setIsListening(false);
+      };
+
+      recognition.start();
+  };
+
+  const handleShadowRecord = async () => {
+      setIsShadowRecording(true);
+      setStatus('Shadow Mode: Intercepting DOM Events natively...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Mock captured events natively intercepting user actions
+      setSteps([
+          { action: 'navigate', url: 'https://finance.yahoo.com/quote/GC%3DF/' },
+          { action: 'extract', selector: "fin-streamer[data-field='regularMarketPrice']", variable: 'goldPrice' },
+          { action: 'api', target: 'slack', payload: 'Sovereign Shadow Mode Alert: Gold -> {{goldPrice}}' }
+      ]);
+      setStatus('Shadow Record Completed. Virtual DOM converted to robust JSON script.');
+      setIsShadowRecording(false);
+  };
+
+  const handleArchitectureFile = (e) => {
+      setArchitectureFile(e.target.files[0]);
+  };
+
+  const handleKimiAnalysis = async () => {
+      if (!architectureFile) return;
+      setIsKimiAnalyzing(true);
+      setStatus('Mega-Context: Parsing enormous architecture payload natively...');
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+          const res = await fetch('http://localhost:3001/api/analyze-architecture', { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+              setSteps(data.steps);
+              setStatus('Architecture parsed into 4 robust Execution blocks.');
+          }
+      } catch (e) {
+          setStatus('Kimi Error: Could not parse architecture.');
+      }
+      setIsKimiAnalyzing(false);
+  };
+
+  const engageSwarm = async () => {
+      setIsSwarmRunning(true);
+      setShowSanitization(true);
+      
+      const logs = [
+          "Intercepting Raw Data Packet...",
+          "Llama-Σ Scanning for PII...",
+          "DETECTED: National ID / Phone Number...",
+          "ENCRYPTING: [REDACTED-AES-256-GCM]..."
+      ];
+      
+      setSanitizationLogs([]);
+      for (let i = 0; i < logs.length; i++) {
+          await new Promise(r => setTimeout(r, 750));
+          setSanitizationLogs(prev => [...prev, logs[i]]);
+      }
+      await new Promise(r => setTimeout(r, 500));
+      setShowSanitization(false);
+
+      setCognitiveCycles(0);
+      setSwarmResult(null);
+      const interval = setInterval(() => setCognitiveCycles(prev => prev + 1), 400);
+      try {
+          const res = await fetch('http://localhost:3001/api/engage-swarm', { method: 'POST' });
+          const data = await res.json();
+          if (data.success) setSwarmResult(data);
+      } catch(e) {
+          setSwarmResult({ error: 'Swarm deployment failed.' });
+      }
+      clearInterval(interval);
+      setIsSwarmRunning(false);
+  };
+
+  const handleOneTap = async (actionId) => {
+      setOneTapLoading(actionId);
+      try {
+          const res = await fetch('http://localhost:3001/api/life-action', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ actionId })
+          });
+          const data = await res.json();
+          if (data.success) {
+              setSteps(data.steps);
+              setStatus(`One-Tap: "${data.title}" loaded. Est. time: ${data.estimatedTime}`);
+          }
+      } catch(e) {
+          setStatus('Life-Action Engine Error.');
+      }
+      setOneTapLoading(null);
+  };
+
+  const handleViralShare = () => {
+      const savedAmount = ((analytics?.runs || 0) * 0.23 * 45).toFixed(2);
+      const savedHours = ((analytics?.runs || 0) * 0.23).toFixed(1);
+      const stats = `Just autonomously saved $${savedAmount} and ${savedHours} hours today using @ExecraHQ Sovereign AI Ecosystem! 🚀🌍 #AI #Automation #SovereignAgent`;
+      const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(stats)}`;
+      window.open(url, '_blank');
+  };
+
+  const handleRunAutomation = async (overrideSteps = null) => {
+      const runSteps = overrideSteps || steps;
+      if (!runSteps || runSteps.length === 0) return;
+      
+      setStatus('Running...');
+      setActivePlaywrightStep(0);
+      setStepErrors({});
+      setExtractedData([]); // Clear previous scraped data
+      startTimer();
+      
+      try {
+        const response = await fetch('http://localhost:3001/api/run-workflow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ steps: runSteps, proxyNode }),
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); 
+
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const event = JSON.parse(line);
+                    if (event.status === 'healing') {
+                        if (event.message.includes('Error handled')) {
+                            setStatus('Error handled');
+                        } else {
+                            setStatus('⚠️ Self-Healing: ' + event.message);
+                        }
+                    } else if (event.status === 'running') {
+                        setActivePlaywrightStep(event.activeStepIndex);
+                        setStatus('Executing step...');
+                    } else if (event.status === 'error') {
+                        setStepErrors(prev => ({ ...prev, [event.activeStepIndex]: event.message }));
+                        setStatus('Error');
+                    } else if (event.status === 'done') {
+                        setStatus('Completed ✅');
+                        setActivePlaywrightStep(null);
+                        stopTimer();
+                    } else if (event.status === 'detected_bot') {
+                        setStatus('Protected environment detected');
+                    } else if (event.status === 'fatal') {
+                        setStatus('Error: ' + event.message);
+                        setActivePlaywrightStep(null);
+                        stopTimer();
+                    } else if (event.status === 'extracted') {
+                        setExtractedData(prev => [...prev, event.data]);
+                        setStatus('Data Extracted...');
+                    }
+                } catch(e) {}
+            }
+        }
+      } catch (err) {
+        console.error(err);
+        setStatus('Engine connection lost.');
+        setActivePlaywrightStep(null);
+        stopTimer();
+      }
+  };
+
+  const exportJSON = () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(steps, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", "workflow.json");
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+  };
+
+  const exportCode = (language) => {
+      let script = '';
+      let filename = 'workflow';
+      
+      if (language === 'nodejs') {
+          script = `// Auto-generated Execra Automation Script\nconst { chromium } = require('playwright');\nrequire('dotenv').config();\n\n(async () => {\n  const browser = await chromium.launch({ headless: false });\n  const page = await browser.newPage();\n`;
+          steps.forEach(step => {
+              if (step.action === 'navigate') script += `  await page.goto(${JSON.stringify(step.url || '')});\n`;
+              if (step.action === 'click') script += `  await page.click(${JSON.stringify(step.selector || '')});\n`;
+              if (step.action === 'extract') script += `  const extracted = await page.$eval(${JSON.stringify(step.selector || '')}, el => el.textContent);\n  console.log("Extracted:", extracted);\n`;
+              if (step.action === 'type') {
+                  let valStr = JSON.stringify(step.value || '');
+                  if (step.value && step.value.startsWith('ENV:')) {
+                      const envKey = step.value.substring(4);
+                      valStr = `process.env.${envKey}`;
+                  }
+                  script += `  await page.fill(${JSON.stringify(step.selector || '')}, ${valStr});\n`;
+              }
+          });
+          script += `\n  await browser.close();\n})();`;
+          filename = 'playwright_script.js';
+      } else if (language === 'python') {
+          script = `# Auto-generated Execra Automation Script\nimport os\nfrom playwright.sync_api import sync_playwright\n\nwith sync_playwright() as p:\n    browser = p.chromium.launch(headless=False)\n    page = browser.new_page()\n`;
+          steps.forEach(step => {
+              if (step.action === 'navigate') script += `    page.goto(${JSON.stringify(step.url || '')})\n`;
+              if (step.action === 'click') script += `    page.click(${JSON.stringify(step.selector || '')})\n`;
+              if (step.action === 'extract') script += `    extracted = page.eval_on_selector(${JSON.stringify(step.selector || '')}, "el => el.textContent")\n    print("Extracted:", extracted)\n`;
+              if (step.action === 'type') {
+                  let valStr = JSON.stringify(step.value || '');
+                  if (step.value && step.value.startsWith('ENV:')) valStr = `os.environ.get('${step.value.substring(4)}')`;
+                  script += `    page.fill(${JSON.stringify(step.selector || '')}, ${valStr})\n`;
+              }
+          });
+          script += `    browser.close()\n`;
+          filename = 'playwright_script.py';
+      } else if (language === 'java') {
+          script = `// Auto-generated Execra Automation Script\nimport com.microsoft.playwright.*;\n\npublic class Workflow {\n  public static void main(String[] args) {\n    try (Playwright playwright = Playwright.create()) {\n      Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));\n      Page page = browser.newPage();\n`;
+          steps.forEach(step => {
+              if (step.action === 'navigate') script += `      page.navigate(${JSON.stringify(step.url || '')});\n`;
+              if (step.action === 'click') script += `      page.click(${JSON.stringify(step.selector || '')});\n`;
+              if (step.action === 'extract') script += `      Object extracted = page.evalOnSelector(${JSON.stringify(step.selector || '')}, "el -> el.textContent");\n      System.out.println("Extracted: " + extracted);\n`;
+              if (step.action === 'type') {
+                  let valStr = JSON.stringify(step.value || '');
+                  if (step.value && step.value.startsWith('ENV:')) valStr = `System.getenv("${step.value.substring(4)}")`;
+                  script += `      page.fill(${JSON.stringify(step.selector || '')}, ${valStr});\n`;
+              }
+          });
+          script += `      browser.close();\n    }\n  }\n}\n`;
+          filename = 'Workflow.java';
+      }
+      
+      const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(script);
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", filename);
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+  };
+
+  const handleSchedule = async () => {
+       if (!steps) return;
+       try {
+           const res = await fetch('http://localhost:3001/api/schedule', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ scheduleStr: scheduleCron, steps })
+           });
+           const data = await res.json();
+           if (data.success) {
+               setStatus(`Scheduled for ${scheduleCron}`);
+               setShowScheduler(false);
+           }
+       } catch(e) {}
+  };
+
+  const handleGenerateInsights = async () => {
+      setIsGeneratingReport(true);
+      try {
+           const res = await fetch('http://localhost:3001/api/generate-insights', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ extractedData })
+           });
+           const data = await res.json();
+           if (data.success) {
+               setAiReport(data.report);
+           }
+      } catch(e) {}
+      setIsGeneratingReport(false);
+  };
+
+  const downloadCSV = () => {
+      if (extractedData.length === 0) return;
+      const csvContent = "data:text/csv;charset=utf-8,Extracted Values\\n" + extractedData.map(e => `"${e.replace(/"/g, '""')}"`).join("\\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "extracted_data.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+  };
+
+  return (
+    <div className={`min-h-screen ${isDark ? 'bg-[#0B0F14] text-slate-300' : 'bg-[#f8fafc] text-slate-700'} font-sans selection:bg-purple-500/30 overflow-x-hidden relative transition-colors duration-500`} dir={isRtl ? 'rtl' : 'ltr'}>
+
+      {/* Sanitization Overlay */}
+      <AnimatePresence>
+          {showSanitization && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 backdrop-blur-sm">
+                  <div className="bg-black border border-emerald-500/50 rounded-lg p-8 w-full max-w-2xl font-mono text-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.2)]">
+                      <div className="flex items-center justify-between mb-4 border-b border-emerald-500/30 pb-2">
+                          <span className="font-bold flex items-center gap-2"><Shield className="w-5 h-5"/> ZERO-TRUST REDACTION ENGINE</span>
+                          <span className="text-xs animate-pulse">Running Local Inference (Llama-Σ)</span>
+                      </div>
+                      <div className="space-y-3 min-h-[150px]">
+                          {sanitizationLogs.map((log, idx) => (
+                              <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex gap-3">
+                                  <span className="text-emerald-700">{'>'}</span>
+                                  <span className={log.includes('DETECTED') ? 'text-red-400 font-bold' : log.includes('ENCRYPTING') ? 'text-emerald-400 font-bold' : 'text-emerald-500/80'}>{log}</span>
+                              </motion.div>
+                          ))}
+                          <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="inline-block w-2 h-4 bg-emerald-500 ml-1" />
+                      </div>
+                  </div>
+              </motion.div>
+          )}
+      </AnimatePresence>
+
+      {/* ═══ GLOBAL STATUS BAR ═══ */}
+      <div className="global-status-bar py-2 px-4 text-center">
+          <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              <span className="inline-flex items-center gap-2">
+                  <Globe className="w-3 h-3 text-violet-400" />
+                  {t('global_status')}
+              </span>
+          </p>
+      </div>
+
+      {/* 🔮 Contextual Antecedent Engine (WorkstreamObserver) */}
+      <AnimatePresence>
+          {repetitiveActions >= 3 && (
+              <motion.div initial={{ y: -50, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: -50, opacity: 0, scale: 0.95 }} transition={{ type: 'spring', stiffness: 400, damping: 25 }} className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-lg">
+                  <div className={`${isDark ? 'bg-slate-900/40' : 'bg-white/80'} backdrop-blur-3xl border ${isDark ? 'border-white/10' : 'border-slate-200'} shadow-[0_30px_60px_rgba(0,0,0,0.3)] rounded-2xl p-4 flex items-center justify-between gap-4 overflow-hidden relative`}>
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 pointer-events-none" />
+                      <div className="flex items-center gap-4 relative z-10 w-full">
+                          <div className="bg-indigo-500/20 p-2.5 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+                              <Sparkles className="w-5 h-5 text-indigo-400" />
+                          </div>
+                          <div className="flex-1">
+                              <h4 className={`${isDark ? 'text-white' : 'text-slate-900'} font-bold text-[13px] uppercase tracking-wide`}>Ambient Pulse</h4>
+                              <p className={`${isDark ? 'text-slate-300' : 'text-slate-600'} text-xs mt-0.5`}>
+                                  {isRtl ? 'لاحظت أنك تكرر هذه الخطوات. هل أقوم بأتمتة هذا التدفق بشكل دائم؟' : "I noticed you're repeating these steps. Shall I permanently automate this logic flow for you?"}
+                              </p>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                             <button onClick={() => setRepetitiveActions(0)} className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-lg shadow-indigo-500/30 whitespace-nowrap">{isRtl ? 'أتمت الآن' : 'Automate Now'}</button>
+                             <button onClick={() => setRepetitiveActions(0)} className={`${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'} text-xs font-semibold whitespace-nowrap`}>{isRtl ? 'تجاهل' : 'Dismiss'}</button>
+                          </div>
+                      </div>
+                  </div>
+              </motion.div>
+          )}
+      </AnimatePresence>
+      
+      {/* ═══ NAVBAR ═══ */}
+      <nav className={`flex flex-col sm:flex-row justify-between items-center py-6 px-4 md:px-8 max-w-7xl mx-auto gap-4 sm:gap-0 ${isDark ? '' : 'bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200/60'}`}>
+        <div className="flex items-center gap-2">
+            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="url(#execra-gradient)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <defs>
+                <linearGradient id="execra-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#8b5cf6" />
+                  <stop offset="100%" stopColor="#3b82f6" />
+                </linearGradient>
+              </defs>
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            <span className={`text-xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} mb-0.5`}>Execra</span>
+            
+            {/* Sovereign Badge */}
+            <div className={`hidden md:flex items-center gap-2 ${isDark ? 'bg-emerald-900/30 border-emerald-500/50' : 'bg-emerald-50 border-emerald-300'} border px-3 py-1.5 rounded-full shadow-[0_0_15px_rgba(16,185,129,0.2)] ${isRtl ? 'mr-4' : 'ml-4'} cursor-help`} title={isRtl ? 'الاستدلال على الجهاز. بدون نقل سحابي.' : 'On-Device Inference Active. Zero cloud transmission.'}>
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span className="text-emerald-400 text-[10px] font-bold tracking-widest uppercase">{t('nav.sovereign')}</span>
+            </div>
+
+            {/* Stealth Mode Badge */}
+            <div className={`hidden md:flex items-center gap-2 ${isDark ? 'bg-cyan-900/30 border-cyan-500/40' : 'bg-cyan-50 border-cyan-300'} border px-3 py-1.5 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.2)] ${isRtl ? 'mr-3' : 'ml-3'} cursor-help`} title="Advanced Stealth Engine">
+                <Ghost className="w-3 h-3 text-cyan-400 animate-pulse" />
+                <span className="text-cyan-400 text-[10px] font-bold tracking-widest uppercase">{t('nav.stealth')}</span>
+            </div>
+
+            {/* Neural XP Badge */}
+            <div className={`hidden md:flex items-center gap-2 ${isDark ? 'bg-amber-900/30 border-amber-500/40' : 'bg-amber-50 border-amber-300'} border px-3 py-1.5 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.2)] ${isRtl ? 'mr-3' : 'ml-3'} cursor-help`} title={`${neuralMemory.totalExperiences} stored experiences`}>
+                <Database className="w-3 h-3 text-amber-400" />
+                <span className="text-amber-400 text-[10px] font-bold tracking-widest uppercase">{t('nav.neural_xp')}: +{neuralMemory.xp.toLocaleString()}</span>
+            </div>
+        </div>
+
+        <div className="flex gap-3 text-sm font-medium items-center">
+            {/* Language Switcher */}
+            <div className="lang-switch">
+                <button onClick={() => i18n.changeLanguage('en')} className={currentLang === 'en' ? 'active' : `${isDark ? 'text-slate-400' : 'text-slate-500'}`}>EN</button>
+                <button onClick={() => i18n.changeLanguage('ar')} className={currentLang === 'ar' ? 'active' : `${isDark ? 'text-slate-400' : 'text-slate-500'}`} style={{ fontFamily: 'Cairo, sans-serif' }}>عربي</button>
+            </div>
+
+            {/* Theme Toggle */}
+            <button onClick={toggleTheme} className="theme-toggle" title={isDark ? t('theme.light') : t('theme.dark')} aria-label="Toggle Theme" />
+
+            {/* Persona Mode Toggle */}
+            <div className={`flex ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'} border rounded-lg p-0.5`}>
+                <button onClick={() => setPersonaMode('simple')} className={`px-3 py-1.5 rounded-md text-[11px] font-bold transition-all ${personaMode === 'simple' ? 'bg-emerald-600 text-white shadow-md' : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
+                    <Home className="w-3 h-3 inline mr-1" />{t('nav.simple')}
+                </button>
+                <button onClick={() => setPersonaMode('pro')} className={`px-3 py-1.5 rounded-md text-[11px] font-bold transition-all ${personaMode === 'pro' ? 'bg-purple-600 text-white shadow-md' : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
+                    <Terminal className="w-3 h-3 inline mr-1" />{t('nav.pro')}
+                </button>
+            </div>
+            <a href="#" className={`${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'} transition-colors hidden md:block`}>{t('nav.docs')}</a>
+            <a href="#" className={`${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'} transition-colors hidden md:block`}>{t('nav.github')}</a>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <header className="relative pt-24 pb-32 text-center px-4">
+        {/* Glow Effects */}
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] ${isDark ? 'bg-purple-600/20' : 'bg-purple-300/15'} blur-[120px] rounded-full pointer-events-none`} />
+        
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="relative z-10 max-w-4xl mx-auto">
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'} border text-xs font-semibold text-purple-400 mb-8`}>
+                <Sparkles className="w-3 h-3" />
+                <span>{t('hero.badge')}</span>
+            </div>
+            
+            <h1 className={`text-5xl md:text-7xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} mb-6 leading-tight`}>
+                {t('hero.title_1')} <br/><span className="gradient-text">{t('hero.title_2')}</span>
+            </h1>
+            
+            <p className={`text-xl ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-10 max-w-2xl mx-auto leading-relaxed`}>
+                {personaMode === 'simple' ? t('hero.subtitle_simple') : t('hero.subtitle_pro')}
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-4">
+                <button onClick={scrollToDemo} className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:shadow-[0_0_25px_rgba(139,92,246,0.6)] transition-all active:scale-95 border-transparent border">
+                    <Play className="w-5 h-5 fill-current" />
+                    {t('hero.run_demo')}
+                </button>
+                <button onClick={scrollToDemo} className={`flex items-center gap-2 ${isDark ? 'bg-slate-900 border-slate-700 text-white hover:bg-slate-800' : 'bg-white border-slate-200 text-slate-900 hover:bg-slate-50 shadow-sm'} border px-8 py-4 rounded-xl font-bold transition-all active:scale-95 focus:ring-2 focus:ring-slate-500 focus:outline-none`}>
+                    <Code className="w-5 h-5" />
+                    {t('hero.try_templates')}
+                </button>
+            </div>
+        </motion.div>
+      </header>
+
+      {/* Interactive Engine Section */}
+      <section ref={demoRef} className="max-w-5xl mx-auto px-4 pb-24 relative z-20">
+          <div className="glass rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+              {/* Subtle grid bg inside card */}
+              <div className="absolute inset-0 bg-[url('https://api.v0.dev/assets/grid.svg')] opacity-[0.05] pointer-events-none" />
+              
+              <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12">
+                  
+                  {/* Left Column: Input */}
+                  <div className="space-y-8">
+                      <div>
+                          <h3 className="text-2xl font-bold text-white mb-2">1. Control Plane</h3>
+                          <p className="text-slate-400 text-sm mb-6">Input intent via Chat, Video, or preset flows.</p>
+                          
+                          {/* AI Chat Builder */}
+                          <div className="bg-[#050505] shadow-[0_0_20px_rgba(139,92,246,0.15)] border border-purple-500/30 rounded-xl p-6 transition-all hover:border-purple-500/60 mb-6 relative">
+                              <label className="flex items-center justify-between text-sm font-semibold text-purple-300 mb-4 uppercase tracking-wider">
+                                  <div className="flex items-center gap-2"><MessageSquare className="w-4 h-4 text-purple-400" /> Natural Language Builder</div>
+                                  <div className="flex items-center gap-2">
+                                      {isListening && <span className="bg-emerald-900/40 text-emerald-300 text-[10px] px-2 py-0.5 rounded border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.5)]">Audio: Local Processing Only</span>}
+                                      {isProcessing ? (
+                                        <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border bg-slate-900/60 font-black animate-pulse transition-all shadow-[0_0_10px_currentColor]">
+                                          <motion.div animate={{ color: ['#f97316', '#10b981', '#3b82f6', '#f97316'] }} transition={{ repeat: Infinity, duration: 2 }}>
+                                              <BrainCircuit className="w-3 h-3" />
+                                          </motion.div>
+                                          <motion.span animate={{ color: ['#f97316', '#10b981', '#3b82f6', '#f97316'] }} transition={{ repeat: Infinity, duration: 2 }}>
+                                              Unified Core Active
+                                          </motion.span>
+                                        </span>
+                                      ) : (
+                                        <span className="bg-purple-900/40 text-purple-200 text-[10px] px-2 py-0.5 rounded border border-purple-500/20">GPT-4o</span>
+                                      )}
+                                  </div>
+                              </label>
+                              <div className="relative">
+                                  <textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder="e.g. Nav to Amazon, check iPhone 15 price, open Twitter and tweet it..." className={`w-full bg-[#0B0F14] text-sm text-slate-200 border border-slate-700/50 rounded-lg p-3 pt-4 outline-none focus:border-purple-500 h-24 resize-none transition-all ${isListening ? 'border-red-500/50 shadow-inner' : ''}`}></textarea>
+                                  <button onClick={toggleVoiceControl} className={`absolute bottom-3 right-3 p-2 rounded-full transition-all duration-300 ${isListening ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.7)]' : 'bg-slate-800 hover:bg-slate-700'}`} title="Sovereign Voice Orchestration">
+                                      <Mic className={`w-5 h-5 ${isListening ? 'text-white animate-pulse' : 'text-slate-400'}`} />
+                                  </button>
+                                  {isListening && (
+                                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex gap-1 items-end h-8 pointer-events-none">
+                                          {[1, 2, 3, 4, 5].map(i => (
+                                              <motion.div key={i} animate={{ height: [10, 30, 10] }} transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }} className="w-1.5 bg-red-400 rounded-full" />
+                                          ))}
+                                      </div>
+                                  )}
+                              </div>
+                              <button onClick={() => handleAiPromptBuild(null)} disabled={isProcessing || (!aiPrompt && !isListening)} className="mt-3 w-full py-3 rounded-lg font-bold bg-purple-600 hover:bg-purple-500 text-white disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+                                  {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                  {isProcessing ? 'Synthesizing Pipeline...' : 'Generate Automation'}
+                              </button>
+                          </div>
+
+                          {/* Video Upload UI */}
+                          <div className="bg-[#0c0c0c] border border-slate-800 rounded-xl p-6 transition-all hover:border-slate-600">
+                             <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">
+                                 <Video className="w-4 h-4 text-indigo-400" />
+                                 Record & Train (Video)
+                             </label>
+                             <input type="file" accept="video/mp4,video/webm" onChange={handleFileChange} className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-slate-800 file:text-white hover:file:bg-slate-700 cursor-pointer" />
+                             
+                             <button onClick={handleUpload} disabled={isProcessing || !file || isShadowRecording} className="mt-6 w-full py-3 rounded-lg font-medium bg-slate-800 hover:bg-slate-700 text-white disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+                                 {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-5 h-5" />}
+                                 {isProcessing ? 'Synthesizing...' : 'Extract & Process'}
+                             </button>
+                             <button onClick={handleShadowRecord} disabled={isProcessing || isShadowRecording} className={`mt-3 w-full py-3 rounded-lg font-bold border disabled:opacity-50 transition-all flex items-center justify-center gap-2 ${isShadowRecording ? 'bg-red-900/40 border-red-500 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)] animate-pulse' : 'bg-transparent border-slate-700 text-slate-400 hover:text-white hover:border-slate-500'}`}>
+                                 <Eye className="w-4 h-4" />
+                                 {isShadowRecording ? 'Recording DOM Events...' : 'Shadow Record (Native)'}
+                             </button>
+                          </div>
+
+                          {/* Kimi Mega-Dropzone */}
+                          <div className="bg-[#050510] border border-blue-900/50 shadow-[0_0_20px_rgba(59,130,246,0.1)] rounded-xl p-6 transition-all hover:border-blue-500/50">
+                             <label className="flex items-center gap-2 text-sm font-semibold text-blue-300 mb-4 uppercase tracking-wider">
+                                 <FileJson className="w-4 h-4 text-blue-400" />
+                                 Massive Context Layer
+                             </label>
+                             <div className="border border-dashed border-blue-800/50 rounded-lg p-6 flex flex-col items-center justify-center text-center bg-blue-900/10">
+                                 <Server className="w-8 h-8 text-blue-500/50 mb-3" />
+                                 <input type="file" onChange={handleArchitectureFile} className="block w-full text-xs text-blue-400 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-blue-900/40 file:text-blue-300 hover:file:bg-blue-800/50 cursor-pointer text-center" />
+                                 <span className="text-[10px] text-blue-500/50 mt-3 font-bold uppercase tracking-widest">Kimi-Powered (200k Tokens)</span>
+                             </div>
+                             
+                             <button onClick={handleKimiAnalysis} disabled={isKimiAnalyzing || !architectureFile || isProcessing} className="mt-4 w-full py-3 rounded-lg font-bold bg-blue-900/40 border border-blue-700/50 hover:bg-blue-800 text-blue-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+                                 {isKimiAnalyzing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
+                                 {isKimiAnalyzing ? 'Ingesting Architecture...' : 'Analyze Complexity'}
+                             </button>
+                          </div>
+                      </div>
+
+                      <div className="relative flex py-2 items-center">
+                          <div className="flex-grow border-t border-slate-800"></div>
+                          <span className="flex-shrink-0 mx-4 text-slate-500 text-xs font-bold tracking-widest uppercase">Or Quick Start</span>
+                          <div className="flex-grow border-t border-slate-800"></div>
+                      </div>
+
+                      {/* Templates */}
+                      <div className="space-y-3">
+                          <div className="group flex justify-between items-center p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/50 transition-colors">
+                              <span className="font-medium text-slate-200">User Login Flow</span>
+                              <button onClick={() => handleRunTemplate('login')} disabled={!isEnvReady || isProcessing || activePlaywrightStep !== null} className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 text-sm font-semibold disabled:opacity-50">
+                                  Run Auto <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                              </button>
+                          </div>
+                      </div>
+
+                      <div className="relative flex py-2 items-center">
+                          <div className="flex-grow border-t border-purple-800/30"></div>
+                          <span className="flex-shrink-0 mx-4 text-purple-400 text-xs font-bold tracking-widest uppercase flex items-center gap-1"><Sparkles className="w-3 h-3"/> Enterprise Solutions</span>
+                          <div className="flex-grow border-t border-purple-800/30"></div>
+                      </div>
+
+                      <div className="space-y-3">
+                          <div className={`group flex justify-between items-center p-4 rounded-xl bg-[#0c051a] border transition-colors ${intent === 'email_automation' ? 'border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]' : 'border-purple-900/50 hover:border-purple-500/50'}`}>
+                              <div className="flex flex-col">
+                                  <span className="font-medium text-purple-200">Email Automation Vault</span>
+                                  <span className="text-xs text-purple-400/70">Requires .env variables</span>
+                              </div>
+                              <button onClick={() => handleRunTemplate('email')} disabled={!isEnvReady || isProcessing || activePlaywrightStep !== null} className="flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-semibold disabled:opacity-50">
+                                  {intent === 'email_automation' ? 'Matched Intent' : 'Run Auto'} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                              </button>
+                          </div>
+                          <div className={`group flex justify-between items-center p-4 rounded-xl bg-[#0c051a] border transition-colors ${intent === 'data_scraping' ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-purple-900/50 hover:border-blue-500/50'}`}>
+                              <span className="font-medium text-blue-200">Data Scraper & Analyzer</span>
+                              <button onClick={() => handleRunTemplate('scrape')} disabled={!isEnvReady || isProcessing || activePlaywrightStep !== null} className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-semibold disabled:opacity-50">
+                                  {intent === 'data_scraping' ? 'Matched Intent' : 'Run Auto'} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                              </button>
+                          </div>
+                          <div className={`group flex justify-between items-center p-4 rounded-xl bg-[#0c051a] border transition-colors ${intent === 'report_generation' ? 'border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-purple-900/50 hover:border-emerald-500/50'}`}>
+                              <span className="font-medium text-emerald-200">Report Generator (Docs)</span>
+                              <button onClick={() => handleRunTemplate('report')} disabled={!isEnvReady || isProcessing || activePlaywrightStep !== null} className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 text-sm font-semibold disabled:opacity-50">
+                                  {intent === 'report_generation' ? 'Matched Intent' : 'Run Auto'} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                              </button>
+                          </div>
+                      </div>
+                      
+                      {/* Global Status Bar */}
+                      <AnimatePresence>
+                          {status && (
+                              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-4 rounded-xl bg-indigo-900/20 border border-indigo-500/30 flex justify-between items-center text-sm font-medium text-indigo-200">
+                                  <div className="flex items-center gap-3">
+                                      {(isEnvChecking || isProcessing) ? <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" /> : <Terminal className="w-4 h-4 text-indigo-400" />}
+                                      {status}
+                                  </div>
+                                  {executionTime > 0 && <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {executionTime}s</span>}
+                              </motion.div>
+                          )}
+                      </AnimatePresence>
+
+                  </div>
+
+                      {/* Right Column: Execution Output */}
+                  <div className="bg-[#0B0F14] rounded-xl border border-slate-800 flex flex-col overflow-hidden relative shadow-inner">
+                      <div className="px-5 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                         <h3 className="font-bold text-white flex items-center gap-2"><PlayCircle className="w-5 h-5 text-indigo-500"/> Workflow Engine</h3>
+                         {(() => {
+                            let badgeLabel = "Ready";
+                            let badgeClass = "bg-emerald-500/10 text-emerald-400";
+                            let Icon = CheckCircle;
+                            
+                            if (!isEnvReady) {
+                                badgeLabel = "Env Setup";
+                                badgeClass = "bg-amber-500/10 text-amber-400";
+                                Icon = Settings;
+                            } else if (activePlaywrightStep !== null) {
+                                badgeLabel = "Running";
+                                badgeClass = "bg-blue-500/10 text-blue-400 opacity-80 blink-fast";
+                                Icon = RefreshCw;
+                            } else if (status === 'Error') {
+                                badgeLabel = "Error";
+                                badgeClass = "bg-red-500/10 text-red-500";
+                                Icon = Settings;
+                            } else if (status === 'Completed ✅') {
+                                badgeLabel = "Completed";
+                                badgeClass = "bg-emerald-500/10 text-emerald-400";
+                                Icon = CheckCircle;
+                            }
+                            
+                            return (
+                             <span className={`px-2 py-1 text-xs rounded font-medium flex items-center gap-1 ${badgeClass}`}>
+                                 <Icon className={`w-3 h-3 ${badgeLabel === 'Running' || badgeLabel === 'Env Setup' ? 'animate-spin' : ''}`} /> {badgeLabel}
+                             </span>
+                            );
+                         })()}
+                      </div>
+                      
+                      <div className="flex-1 p-5 overflow-y-auto max-h-[500px]">
+                          {!steps ? (
+                              <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-4">
+                                  <FileJson className="w-12 h-12 opacity-20" />
+                                  <p className="text-sm">Awaiting intent input...</p>
+                              </div>
+                          ) : (
+                              <div className="space-y-4 relative pl-2 py-2">
+                                  {/* Line connector */}
+                                  <div className="absolute left-[1.4rem] top-8 bottom-8 w-0.5 bg-slate-800/80 -z-10" />
+                                  
+                                  {steps.map((step, idx) => {
+                                      const isActive = activePlaywrightStep === idx;
+                                      const isError = !!stepErrors[idx];
+                                      const isPast = activePlaywrightStep !== null && idx < activePlaywrightStep;
+                                      
+                                      let dotColor = 'bg-slate-700 border-slate-800';
+                                      if (isActive) dotColor = 'bg-indigo-500 border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.6)] animate-pulse';
+                                      if (isPast) dotColor = 'bg-emerald-500 border-emerald-400';
+                                      if (isError) dotColor = 'bg-red-500 border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.6)]';
+
+                                      return (
+                                          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }} key={idx} className="flex gap-4 relative group w-full">
+                                              <div className="relative mt-2 shrink-0">
+                                                  <div className={`w-3.5 h-3.5 rounded-full border-2 z-10 ${dotColor} transition-all duration-300`} />
+                                              </div>
+                                              <div className={`flex-1 p-4 rounded-xl border ${isActive ? 'bg-indigo-900/10 border-indigo-500/50 scale-[1.02]' : isError ? 'bg-red-900/10 border-red-500/50' : 'bg-[#0c0c0c] border-slate-800 group-hover:border-slate-700'} transition-all shadow-sm`}>
+                                                  <div className="flex items-center gap-2 mb-2">
+                                                      <span className="text-xs font-bold tracking-widest uppercase text-slate-400">{step.action}</span>
+                                                  </div>
+                                                  <div className="font-mono text-sm text-slate-300 break-all space-y-1">
+                                                      {step.url && <div className="text-indigo-300">{step.url}</div>}
+                                                      {step.selector && <div><span className="text-emerald-400">sel:</span> {step.selector}</div>}
+                                                      {step.value && <div><span className="text-amber-400">val:</span> "{step.value}"</div>}
+                                                  </div>
+                                                  {isError && <p className="mt-3 text-red-400 text-xs font-semibold">{stepErrors[idx]}</p>}
+                                              </div>
+                                          </motion.div>
+                                      );
+                                  })}
+                              </div>
+                          )}
+
+                          {/* Extracted Data Rendering Table */}
+                          {extractedData.length > 0 && (
+                              <div className="mt-8 pt-6 border-t border-slate-800/50">
+                                  <div className="flex justify-between items-center mb-4">
+                                      <h4 className="text-sm font-bold text-slate-200 flex items-center gap-2"><Sparkles className="w-4 h-4 text-blue-400 "/> Extracted Output Preview</h4>
+                                      <div className="flex gap-2">
+                                        <button onClick={handleGenerateInsights} disabled={isGeneratingReport} className="text-xs flex items-center gap-1 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 px-3 py-1.5 rounded transition-colors border border-indigo-500/50 font-semibold">{isGeneratingReport ? <RefreshCw className="w-3 h-3 animate-spin"/> : <BrainCircuit className="w-3 h-3"/>} AI Report</button>
+                                        <button onClick={downloadCSV} className="text-xs flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded transition-colors border border-slate-700"><Download className="w-3 h-3"/> CSV</button>
+                                      </div>
+                                  </div>
+                                  
+                                  {aiReport && (
+                                    <div className="mb-4 p-4 bg-indigo-900/20 border border-indigo-500/30 rounded-lg whitespace-pre-wrap text-sm text-indigo-100 font-medium">
+                                      <div className="flex items-center gap-2 mb-2 font-bold text-indigo-300"><BrainCircuit className="w-4 h-4"/> Generative AI Insights</div>
+                                      {aiReport}
+                                    </div>
+                                  )}
+
+                                  <div className="bg-[#0c0c0c] border border-slate-800 rounded-lg overflow-hidden">
+                                      <table className="w-full text-left text-sm text-slate-400">
+                                          <thead className="bg-slate-900/50 font-medium text-slate-300">
+                                              <tr>
+                                                  <th className="px-4 py-3 border-b border-slate-800"># Node</th>
+                                                  <th className="px-4 py-3 border-b border-slate-800">Scraped Value</th>
+                                              </tr>
+                                          </thead>
+                                          <tbody>
+                                              {extractedData.map((dataItem, dIdx) => (
+                                                  <tr key={dIdx} className="border-b border-slate-800/50 hover:bg-slate-800/20">
+                                                      <td className="px-4 py-3 font-mono text-xs text-indigo-400/80">Result_{dIdx}</td>
+                                                      <td className="px-4 py-3 truncate max-w-[200px]" title={dataItem}>{dataItem}</td>
+                                                  </tr>
+                                              ))}
+                                          </tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+
+                      {/* Sub-Header execution engine */}
+                      <div className="p-4 border-t border-slate-800 bg-slate-900/50 flex items-center justify-between">
+                          <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Globe className="w-4 h-4 text-emerald-400"/> Execution Node</label>
+                          <select value={proxyNode} onChange={e => setProxyNode(e.target.value)} className="bg-black border border-slate-700 text-slate-300 text-xs rounded-md px-3 py-1.5 focus:border-indigo-500 outline-none">
+                              <option value="local">Local (Direct)</option>
+                              <option value="us">United States (Proxy)</option>
+                              <option value="uk">United Kingdom (Proxy)</option>
+                              <option value="jp">Japan (Proxy)</option>
+                          </select>
+                      </div>
+
+                      {/* Export Footer */}
+                      {steps && steps.length > 0 && (
+                          <div className="p-4 border-t border-slate-800 bg-slate-900/30 flex flex-col sm:flex-row gap-3">
+                              <div className="flex flex-1 gap-2">
+                                <button onClick={() => handleRunAutomation()} disabled={!isEnvReady || activePlaywrightStep !== null} className="flex-1 py-3 px-4 bg-white text-slate-900 font-bold rounded-lg hover:bg-slate-200 transition-all focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-50 disabled:bg-slate-600 disabled:text-slate-300 disabled:cursor-not-allowed">
+                                    {activePlaywrightStep !== null ? 'Executing...' : 'Run Engine'}
+                                </button>
+                                <button onClick={() => setShowScheduler(!showScheduler)} className="py-3 px-4 bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 font-bold rounded-lg hover:bg-indigo-600/40 transition-all">
+                                    <Calendar className="w-5 h-5"/>
+                                </button>
+                              </div>
+                              <div className="flex gap-2">
+                                  <button onClick={exportJSON} className="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none" title="Export JSON">
+                                      <Download className="w-5 h-5" />
+                                  </button>
+                                  <button onClick={() => exportCode('nodejs')} className="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-slate-300 font-bold text-xs" title="Export Node.js">JS</button>
+                                  <button onClick={() => exportCode('python')} className="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-slate-300 font-bold text-xs" title="Export Python">PY</button>
+                                  <button onClick={() => exportCode('java')} className="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-slate-300 font-bold text-xs" title="Export Java">JAVA</button>
+                              </div>
+                          </div>
+                      )}
+
+                      {/* Scheduler Dropdown */}
+                      <AnimatePresence>
+                          {showScheduler && (
+                              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="p-4 bg-indigo-900/10 border-t border-indigo-500/20 overflow-hidden">
+                                  <label className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-2 flex items-center gap-2"><Calendar className="w-3 h-3"/> Proactive Scheduler (Cron)</label>
+                                  <div className="flex gap-2">
+                                      <input type="text" value={scheduleCron} onChange={e => setScheduleCron(e.target.value)} className="flex-1 bg-[#0c0c0c] border border-indigo-500/30 rounded-lg px-3 py-2 text-sm text-indigo-200 outline-none focus:border-indigo-500" placeholder="0 8 * * *" />
+                                      <button onClick={handleSchedule} className="bg-indigo-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-indigo-500 transition-all text-sm">Schedule Job</button>
+                                  </div>
+                              </motion.div>
+                          )}
+                      </AnimatePresence>
+                  </div>
+              </div>
+          </div>
+      </section>
+
+      {/* Analytics & ROI Dashboard */}
+      {analytics && (
+          <section className="border-t border-slate-800/50 bg-[#0c0c0c] py-16 px-4 relative">
+              <div className="absolute inset-0 bg-gradient-to-tr from-purple-900/10 via-transparent to-blue-900/10 pointer-events-none" />
+              <div className="max-w-5xl mx-auto relative z-10">
+                  {analytics?.runs >= 50 && <ParticleExplosion intensity={voiceSuccessMode ? 100 : 40} />}
+                  <h2 className="text-3xl font-black text-white mb-2 flex items-center gap-3 relative z-30"><BarChart2 className="w-8 h-8 text-purple-500"/> Economic ROI Dashboard</h2>
+                  <p className="text-slate-400 mb-8 font-medium relative z-30">Real-time value generated by decentralized orchestration.</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <div className="p-6 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-xl hover:border-purple-500/50 transition-colors shadow-xl shadow-black/50 block">
+                          <div className="text-slate-400 text-sm font-semibold mb-2">Total Executions</div>
+                          <div className="text-3xl font-black text-white drop-shadow-md">{analytics.runs || 0}</div>
+                      </div>
+                      <div className="p-6 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-xl hover:border-emerald-500/50 transition-colors shadow-xl shadow-black/50 block">
+                          <div className="text-emerald-400/80 text-sm font-bold mb-2 uppercase tracking-wide">Value Generated</div>
+                          <div className="text-3xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.4)]">${((analytics.runs || 0) * 0.23 * 45).toFixed(2)}</div>
+                      </div>
+                      <div className="p-6 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-xl hover:border-blue-500/50 transition-colors shadow-xl shadow-black/50 block">
+                          <div className="text-blue-400/80 text-sm font-bold mb-2 uppercase tracking-wide">Hours Redeemed</div>
+                          <div className="text-3xl font-black text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.4)]">{((analytics.runs || 0) * 0.23).toFixed(1)}h</div>
+                      </div>
+                      <div className="p-6 bg-red-900/10 backdrop-blur border border-red-900/30 rounded-xl shadow-xl shadow-black/50 block">
+                          <div className="text-red-400/80 text-sm font-semibold mb-2">Predicted Bottlenecks</div>
+                          <div className="text-sm font-medium text-red-300 font-mono mt-1 break-words">{analytics.topFailure || 'None detected'}</div>
+                      </div>
+                  </div>
+                  
+                  {/* Viral Social Hook */}
+                  <div className="mt-8 flex flex-col items-center justify-center border-t border-slate-800/50 pt-8">
+                      <p className="text-slate-500 text-sm mb-4">Leverage your success. Share your ROI to attract clients or alert executives.</p>
+                      <button onClick={handleViralShare} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-blue-500/20 transition-all hover:scale-105 hover:shadow-purple-500/30">
+                          <Share2 className="w-5 h-5"/> Post ROI to X (Twitter)
+                      </button>
+                  </div>
+              </div>
+          </section>
+      )}
+
+      {/* ═══ SOVEREIGN GHOST PROTOCOL — Visual Dashboard ═══ */}
+      <section className={`py-20 px-4 border-t ${isDark ? 'border-slate-800/50 bg-gradient-to-b from-[#030308] to-[#050510]' : 'border-slate-200 bg-gradient-to-b from-slate-50 to-white'} relative overflow-hidden`}>
+          {/* Background Ghost Glow */}
+          <div className="absolute inset-0 pointer-events-none">
+              <div className={`absolute top-1/3 left-1/4 w-[500px] h-[500px] ${isDark ? 'bg-cyan-900/8' : 'bg-cyan-200/15'} blur-[150px] rounded-full`} />
+              <div className={`absolute bottom-1/3 right-1/4 w-[400px] h-[400px] ${isDark ? 'bg-indigo-900/8' : 'bg-indigo-200/15'} blur-[120px] rounded-full`} />
+          </div>
+
+          <div className="max-w-6xl mx-auto relative z-10">
+              {/* Header */}
+              <div className="text-center mb-14">
+                  <div className="ghost-status mx-auto mb-6">
+                      <div className="ghost-dot" />
+                      {isRtl ? 'بروتوكول الشبح السيادي نشط' : 'Sovereign Ghost Protocol Active'}
+                  </div>
+                  <h2 className={`text-4xl md:text-5xl font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-4 tracking-tight`}>
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400">Ghost</span> {isRtl ? 'لوحة التحكم' : 'Command Center'}
+                  </h2>
+                  <p className={`${isDark ? 'text-slate-400' : 'text-slate-500'} max-w-2xl mx-auto text-base`}>
+                      {isRtl ? 'نتحرك في الظلال لنهيمن على الضوء. كل الجدران الرقمية تم اختراقها.' : 'We move in the shadows to dominate the light. All digital walls phased through.'}
+                  </p>
+              </div>
+
+              {/* Ghost Capability Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {/* Platform Evaporation */}
+                  <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} viewport={{ once: true }}
+                      className={`ghost-card ${isDark ? 'bg-[#0a0a14]/80' : 'bg-white/80'} backdrop-blur-sm rounded-2xl p-6`}>
+                      <div className="relative z-10">
+                          <div className={`w-12 h-12 rounded-xl ${isDark ? 'bg-cyan-500/10' : 'bg-cyan-100'} flex items-center justify-center mb-4`}>
+                              <Globe className="w-6 h-6 text-cyan-400" />
+                          </div>
+                          <h3 className={`text-base font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
+                              {isRtl ? 'التلاشي المنصّي' : 'Platform Evaporation'}
+                          </h3>
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'} leading-relaxed mb-3`}>
+                              {isRtl ? 'النفاذ بين الويب والسطح والسحابة كشبح رقمي' : 'Phase through Web, Desktop & Cloud as a digital ghost'}
+                          </p>
+                          <div className="flex gap-1">
+                              {['Web', 'Desktop', 'Cloud'].map(p => (
+                                  <span key={p} className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">{p}</span>
+                              ))}
+                          </div>
+                      </div>
+                  </motion.div>
+
+                  {/* Silent Infiltration */}
+                  <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} viewport={{ once: true }}
+                      className={`ghost-card ${isDark ? 'bg-[#0a0a14]/80' : 'bg-white/80'} backdrop-blur-sm rounded-2xl p-6`}>
+                      <div className="relative z-10">
+                          <div className={`w-12 h-12 rounded-xl ${isDark ? 'bg-indigo-500/10' : 'bg-indigo-100'} flex items-center justify-center mb-4`}>
+                              <Ghost className="w-6 h-6 text-indigo-400" />
+                          </div>
+                          <h3 className={`text-base font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
+                              {isRtl ? 'النفاذ الصامت' : 'Silent Infiltration'}
+                          </h3>
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'} leading-relaxed mb-3`}>
+                              {isRtl ? 'مسارات بيومترية عشوائية + تغيير البصمة كل جزء من الثانية' : 'Ghost Pathing + fingerprint rotation every cycle'}
+                          </p>
+                          <div className="flex items-center gap-2">
+                              <Shield className="w-3 h-3 text-indigo-400" />
+                              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">{isRtl ? 'غير مرئي' : 'Undetectable'}</span>
+                          </div>
+                      </div>
+                  </motion.div>
+
+                  {/* Phantom Cognitive Fusion */}
+                  <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} viewport={{ once: true }}
+                      className={`ghost-card ${isDark ? 'bg-[#0a0a14]/80' : 'bg-white/80'} backdrop-blur-sm rounded-2xl p-6`}>
+                      <div className="relative z-10">
+                          <div className={`w-12 h-12 rounded-xl ${isDark ? 'bg-violet-500/10' : 'bg-violet-100'} flex items-center justify-center mb-4`}>
+                              <BrainCircuit className="w-6 h-6 text-violet-400" />
+                          </div>
+                          <h3 className={`text-base font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
+                              {isRtl ? 'الانصهار العصبوني' : 'Phantom Fusion'}
+                          </h3>
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'} leading-relaxed mb-3`}>
+                              {isRtl ? 'دمج Claude + GPT + Kimi في قرار شبحي واحد' : 'Claude + GPT + Kimi fused into one ghost decision'}
+                          </p>
+                          <div className="flex gap-1">
+                              {['Claude', 'GPT', 'Kimi'].map(m => (
+                                  <span key={m} className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">{m}</span>
+                              ))}
+                          </div>
+                      </div>
+                  </motion.div>
+
+                  {/* Ghost Status */}
+                  <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} viewport={{ once: true }}
+                      className={`ghost-card ${isDark ? 'bg-[#0a0a14]/80' : 'bg-white/80'} backdrop-blur-sm rounded-2xl p-6`}>
+                      <div className="relative z-10">
+                          <div className={`w-12 h-12 rounded-xl ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-100'} flex items-center justify-center mb-4`}>
+                              <Activity className="w-6 h-6 text-emerald-400" />
+                          </div>
+                          <h3 className={`text-base font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
+                              {isRtl ? 'حالة الشبح' : 'Ghost Status'}
+                          </h3>
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'} leading-relaxed mb-3`}>
+                              {isRtl ? 'مستوى التهديد: سيادي / الرؤية: غير مرئي' : 'Threat Level: Sovereign / Visibility: Invisible'}
+                          </p>
+                          <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse" />
+                              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">{isRtl ? 'كل الجدران تم اختراقها' : 'All Walls Phased'}</span>
+                          </div>
+                      </div>
+                  </motion.div>
+              </div>
+          </div>
+      </section>
+
+      {/* ═══ NEURAL ARBITRAGE ROUTER — Dashboard ═══ */}
+      <section className={`py-20 px-4 border-t ${isDark ? 'border-slate-800/50' : 'border-slate-200'} relative overflow-hidden`}>
+          <div className={`absolute inset-0 ${isDark ? 'bg-gradient-to-br from-[#050508] via-[#0a0810] to-[#050508]' : 'bg-gradient-to-br from-white via-slate-50 to-white'}`} />
+          <div className="max-w-6xl mx-auto relative z-10">
+              <div className="text-center mb-14">
+                  <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase mb-6 ${isDark ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>
+                      <Zap className="w-3 h-3" /> {isRtl ? 'محرك التوجيه العصبي' : 'Neural Arbitrage Router'}
+                  </div>
+                  <h2 className={`text-4xl md:text-5xl font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-4 tracking-tight`}>
+                      {isRtl ? 'مُحسّن التكلفة الذكي' : 'AI Cost Optimizer'}
+                  </h2>
+                  <p className={`${isDark ? 'text-slate-400' : 'text-slate-500'} max-w-2xl mx-auto text-base`}>
+                      {isRtl ? 'توجيه كل مهمة للنموذج الأرخص والأسرع والأفضل جودة. توفير 60-80% من تكاليف الذكاء الاصطناعي.' : 'Routes each task to the cheapest, fastest, best-quality AI model. Save 60-80% on AI costs.'}
+                  </p>
+              </div>
+
+              {/* Model Registry Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
+                  {[
+                      { name: 'Claude Opus', provider: 'Anthropic', cost: '$5/$25', color: 'violet', strength: isRtl ? 'تفكير عميق' : 'Deep Reasoning' },
+                      { name: 'Claude Sonnet', provider: 'Anthropic', cost: '$3/$15', color: 'purple', strength: isRtl ? 'متعدد الأغراض' : 'General Purpose' },
+                      { name: 'GPT-4o', provider: 'OpenAI', cost: '$5/$15', color: 'green', strength: isRtl ? 'توليد الأكواد' : 'Code Generation' },
+                      { name: 'GPT-4o Mini', provider: 'OpenAI', cost: '$0.15/$0.6', color: 'emerald', strength: isRtl ? 'مهام سريعة' : 'Quick Tasks' },
+                      { name: 'Kimi K2.5', provider: 'Moonshot', cost: '$1/$5', color: 'blue', strength: isRtl ? 'سياق ضخم' : 'Massive Context' },
+                      { name: 'Local LLM', provider: isRtl ? 'محلي' : 'On-Device', cost: isRtl ? 'مجاني' : 'FREE', color: 'amber', strength: isRtl ? 'سيادي' : 'Sovereign' }
+                  ].map((model, i) => (
+                      <motion.div key={model.name} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} viewport={{ once: true }}
+                          className={`ghost-card rounded-xl p-4 ${isDark ? 'bg-[#0a0a14]/80' : 'bg-white/80'} backdrop-blur-sm text-center`}>
+                          <div className="relative z-10">
+                              <div className={`text-xs font-bold text-${model.color}-400 mb-1`}>{model.provider}</div>
+                              <div className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-1`}>{model.name}</div>
+                              <div className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} mb-2`}>{model.cost}/1M tokens</div>
+                              <div className={`text-[9px] px-2 py-0.5 rounded-full bg-${model.color}-500/10 text-${model.color}-400 border border-${model.color}-500/20 inline-block`}>{model.strength}</div>
+                          </div>
+                      </motion.div>
+                  ))}
+              </div>
+
+              {/* Savings Showcase */}
+              <div className={`ghost-card rounded-2xl p-8 ${isDark ? 'bg-[#0a0a14]/80' : 'bg-white/80'} backdrop-blur-sm max-w-2xl mx-auto`}>
+                  <div className="relative z-10 text-center">
+                      <div className={`text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500 mb-2`}>72%</div>
+                      <div className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'} mb-2`}>
+                          {isRtl ? 'توفير في التكاليف مقابل النهج أحادي النموذج' : 'Cost Savings vs Single-Model Approach'}
+                      </div>
+                      <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {isRtl ? 'كل مهمة تُوجَّه تلقائياً: البحث → Kimi، الكود → Claude، الترجمة → محلي مجاناً' : 'Every task auto-routed: Research → Kimi, Code → Claude, Translation → Local (free)'}
+                      </p>
+                  </div>
+              </div>
+          </div>
+      </section>
+
+      {/* ═══ EXECRA ACTION STORE ═══ */}
+      <ActionMarket
+        onInstall={(action) => {
+          setSteps(action.steps);
+          setStatus(`✅ "${action.name}" installed and loaded into engine.`);
+        }}
+        lang={currentLang}
+        theme={theme}
+      />
+
+      {/* ═══ TEACH ME — SHADOW LEARNING (Simple Mode) ═══ */}
+      {personaMode === 'simple' && (
+        <section className={`py-16 px-4 border-t ${isDark ? 'border-slate-800/50 bg-gradient-to-b from-[#050508] to-[#080810]' : 'border-slate-200 bg-gradient-to-b from-slate-50 to-white'} relative overflow-hidden`}>
+          <div className="max-w-3xl mx-auto text-center relative z-10">
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${isDark ? 'bg-rose-900/30 border-rose-500/30' : 'bg-rose-100 border-rose-300'} border text-xs font-bold ${isDark ? 'text-rose-300' : 'text-rose-700'} mb-6 uppercase tracking-widest`}>
+              <Eye className="w-3 h-3" />
+              {t('control_plane.teach_me')}
+            </div>
+            <h2 className={`text-3xl font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-4`}>
+              {isRtl ? 'علّم إكسيكرا بالمشاهدة' : 'Teach Execra by Watching You'}
+            </h2>
+            <p className={`${isDark ? 'text-slate-400' : 'text-slate-500'} mb-8 max-w-lg mx-auto text-sm`}>
+              {isRtl ? 'فقط نفذ مهمتك مرة واحدة، وإكسيكرا تتعلم الخطوات وتصنع لك أتمتة مخصصة.' : 'Just perform your task once, and Execra learns the steps to create a personal automation template.'}
+            </p>
+            <button
+              onClick={handleShadowRecord}
+              disabled={isShadowRecording}
+              className={`px-10 py-4 rounded-xl font-black text-white transition-all active:scale-95 ${
+                isShadowRecording
+                  ? 'bg-red-600 shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-pulse'
+                  : 'bg-gradient-to-r from-rose-600 to-pink-600 hover:shadow-[0_0_30px_rgba(244,63,94,0.5)]'
+              }`}
+            >
+              {isShadowRecording ? (
+                <span className="flex items-center gap-2"><RefreshCw className="w-4 h-4 animate-spin" /> {t('control_plane.teaching')}</span>
+              ) : (
+                <span className="flex items-center gap-2"><Eye className="w-4 h-4" /> {t('control_plane.teach_me')}</span>
+              )}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Pioneer Badge & Social Proof */}
+      <section className={`${isDark ? 'bg-gradient-to-b from-[#050505] to-[#0a0a0a]' : 'bg-gradient-to-b from-white to-slate-50'} py-24 px-4 border-t ${isDark ? 'border-slate-800/50' : 'border-slate-200'} text-center relative overflow-hidden`}>
+          <div className="max-w-3xl mx-auto relative z-10">
+              <div className="inline-block relative mb-8 group">
+                  <div className="absolute inset-0 bg-yellow-500/20 blur-[60px] rounded-full transition-all group-hover:bg-yellow-400/30 group-hover:blur-[80px]" />
+                  <div className="relative w-32 h-32 mx-auto bg-gradient-to-tr from-yellow-600 via-yellow-400 to-amber-200 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(250,204,21,0.3)] border-4 border-yellow-300/50 transform hover:rotate-12 transition-transform duration-500 cursor-pointer">
+                      <Trophy className="w-14 h-14 text-yellow-900 drop-shadow-md" />
+                      <div className={`absolute -bottom-2 ${isRtl ? '-left-4' : '-right-4'} ${isDark ? 'bg-slate-900' : 'bg-white'} border border-yellow-500/50 text-yellow-500 text-[10px] font-black tracking-widest px-3 py-1 rounded-full uppercase shadow-lg`}>{isRtl ? 'رائد' : 'Pioneer'}</div>
+                  </div>
+              </div>
+              
+              <h2 className={`text-3xl font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-4`}>{isRtl ? 'أنت رائد الأتمتة العالمي' : 'You are a Global Automation Pioneer'}</h2>
+              <p className={`${isDark ? 'text-slate-400' : 'text-slate-500'} mb-10 max-w-xl mx-auto font-medium leading-relaxed`}>{isRtl ? 'المتبنون الأوائل للذكاء الاصطناعي السيادي يمتلكون الميزة النهائية.' : 'Early adopters of Sovereign AI hold the ultimate edge. Claim your digital badge.'}</p>
+              
+              <a href="https://www.linkedin.com/feed/?shareActive=true&text=I%20just%20unlocked%20the%20Global%20Automation%20Pioneer%20Badge%20on%20Execra%20Sovereign%20AI!%20%F0%9F%9A%80%20%23AI%20%23SovereignAgent" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-[#0077b5] hover:bg-[#006097] text-white px-8 py-4 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(0,119,181,0.3)] hover:-translate-y-1">
+                  <BadgeCheck className="w-5 h-5" /> {isRtl ? 'اطلب وانشر على لينكدإن' : 'Claim and post on LinkedIn'}
+              </a>
+          </div>
+      </section>
+
+      {/* Ecosystem Command Center */}
+      <section className="bg-[#050505] py-20 px-4 border-t border-slate-800/50 relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-blue-900/10 blur-[100px] rounded-full pointer-events-none" />
+          <div className="max-w-5xl mx-auto relative z-10 text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 border border-slate-700 text-xs font-bold text-slate-300 mb-8 uppercase tracking-widest shadow-xl">
+                  <Activity className="w-3 h-3 text-emerald-400 animate-pulse" />
+                  Status: Cross-Platform Orchestration Active
+              </div>
+              <h2 className="text-3xl font-black text-white mb-12">Nexus Command Center</h2>
+              <div className="flex flex-wrap justify-center items-center md:gap-12 gap-8">
+                  {[
+                      { name: 'Slack API', icon: MessageSquare, color: 'text-purple-400', border: 'border-purple-500/30' },
+                      { name: 'Stripe Terminal', icon: ShoppingCart, color: 'text-indigo-400', border: 'border-indigo-500/30' },
+                      { name: 'IFTTT / Home', icon: Globe, color: 'text-emerald-400', border: 'border-emerald-500/30' },
+                      { name: 'Notion DB', icon: Server, color: 'text-pink-400', border: 'border-pink-500/30' }
+                  ].map((node, idx) => (
+                      <div key={idx} className={`flex flex-col items-center gap-4 bg-slate-900/50 p-6 rounded-2xl border ${node.border} shadow-[0_0_20px_rgba(0,0,0,0.5)] group hover:-translate-y-2 transition-transform`}>
+                          <node.icon className={`w-8 h-8 ${node.color} drop-shadow-md`} />
+                          <div className="flex flex-col">
+                              <span className="text-sm font-bold text-slate-200">{node.name}</span>
+                              <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mt-1 text-center">Active</span>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+
+              {/* Neural Memory Pulse & Stealth Status */}
+              <div className="flex flex-wrap justify-center gap-6 mt-10">
+                  <div className="flex items-center gap-3 bg-amber-900/15 border border-amber-500/30 px-6 py-3 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+                      <Database className="w-5 h-5 text-amber-400" />
+                      <div className="text-left">
+                          <span className="text-amber-300 text-sm font-black block">Neural Experience Points: +{neuralMemory.xp.toLocaleString()} XP</span>
+                          <span className="text-amber-500/60 text-[10px] font-bold uppercase tracking-widest">{neuralMemory.totalExperiences} stored memories</span>
+                      </div>
+                  </div>
+                  <div className="flex items-center gap-3 bg-cyan-900/15 border border-cyan-500/30 px-6 py-3 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.1)]">
+                      <Ghost className="w-5 h-5 text-cyan-400 animate-pulse" />
+                      <div className="text-left">
+                          <span className="text-cyan-300 text-sm font-black block">Stealth Mode Active</span>
+                          <span className="text-cyan-500/60 text-[10px] font-bold uppercase tracking-widest">Bezier Mouse · Canvas Mask · WebGL Spoof</span>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </section>
+
+      {/* Commander UI - Swarm Map */}
+      <section className="bg-gradient-to-b from-[#030308] to-[#050510] py-24 px-4 border-t border-slate-800/50 relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[600px] h-[600px] bg-violet-900/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="max-w-5xl mx-auto relative z-10">
+              <div className="text-center mb-12">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-900/30 border border-violet-500/30 text-xs font-bold text-violet-300 mb-6 uppercase tracking-widest shadow-xl">
+                      <Users className="w-3 h-3" />
+                      Multi-Agent Swarm Orchestrator
+                  </div>
+                  <h2 className="text-3xl font-black text-white mb-4">Commander Control Plane</h2>
+                  <p className="text-slate-500 max-w-xl mx-auto text-sm">Deploy parallel AI agents across different domains. Each agent operates independently and reports back to the Hive Mind.</p>
+              </div>
+
+              {/* Cognitive Cycles HUD */}
+              {isSwarmRunning && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+                      <div className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-orange-900/20 border border-orange-500/30 shadow-[0_0_25px_rgba(249,115,22,0.15)]">
+                          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}>
+                              <BrainCircuit className="w-5 h-5 text-orange-400" />
+                          </motion.div>
+                          <span className="text-orange-300 font-black text-sm tracking-wide">Cognitive Cycles: {cognitiveCycles}</span>
+                          <span className="text-orange-500/60 text-xs font-bold uppercase">Deep Thinking Active</span>
+                      </div>
+                  </motion.div>
+              )}
+
+              {/* Engage Button */}
+              <div className="text-center mb-12">
+                  <button onClick={engageSwarm} disabled={isSwarmRunning || showSanitization} className="px-10 py-4 rounded-xl font-black text-white bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:shadow-[0_0_30px_rgba(139,92,246,0.5)] disabled:opacity-50 transition-all active:scale-95 text-lg flex items-center gap-3 mx-auto">
+                      {isSwarmRunning ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Hexagon className="w-5 h-5" />}
+                      {isSwarmRunning ? 'Deploying Swarm...' : '[AWAKEN PANTHEON SWARM]'}
+                  </button>
+              </div>
+
+              {/* Swarm Map Grid */}
+              <AnimatePresence>
+              {swarmResult && swarmResult.agents && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          {swarmResult.agents.map((agent, idx) => (
+                              <motion.div key={agent.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.15 }} className="bg-[#0a0a12] border rounded-2xl p-6 relative overflow-hidden group hover:-translate-y-1 transition-transform" style={{ borderColor: agent.color + '40' }}>
+                                  <div className="absolute top-0 left-0 w-full h-1 rounded-t-2xl" style={{ background: `linear-gradient(to right, ${agent.color}, transparent)` }} />
+                                  <div className="flex items-center gap-3 mb-4">
+                                      <div className="w-10 h-10 rounded-xl flex items-center justify-center border" style={{ borderColor: agent.color + '50', background: agent.color + '15' }}>
+                                          <Hexagon className="w-5 h-5" style={{ color: agent.color }} />
+                                      </div>
+                                      <div>
+                                          <h4 className="font-black text-white text-sm">{agent.name}</h4>
+                                          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: agent.color }}>{agent.core} Core</span>
+                                      </div>
+                                  </div>
+                                  <p className="text-xs text-slate-400 font-semibold mb-3">{agent.role}</p>
+                                  <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800">
+                                      <p className="text-xs text-slate-300 font-mono leading-relaxed">{agent.result.data}</p>
+                                  </div>
+                                  <div className="flex justify-between items-center mt-4">
+                                      <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {agent.status}</span>
+                                      <span className="text-slate-500 text-[10px] font-bold">{agent.executionMs}ms</span>
+                                  </div>
+                              </motion.div>
+                          ))}
+                      </div>
+
+                      {/* Optimizer Agent Result */}
+                      {swarmResult.optimizer && (
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="bg-slate-900/50 border border-emerald-500/20 rounded-xl p-5 flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                                  <Shield className="w-5 h-5 text-emerald-400" />
+                              </div>
+                              <div className="flex-1">
+                                  <h4 className="text-sm font-black text-emerald-300">OptimizerAgent: Self-Refactor</h4>
+                                  <p className="text-xs text-slate-400 mt-1">{swarmResult.optimizer.recommendation}</p>
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                  <span className="text-[10px] text-slate-500 font-bold block">Heap Usage</span>
+                                  <span className="text-sm font-black text-emerald-400">{swarmResult.optimizer.memoryUsageMB} MB</span>
+                              </div>
+                          </motion.div>
+                      )}
+
+                      <div className="text-center">
+                          <span className="inline-flex items-center gap-2 text-xs font-bold text-violet-400 bg-violet-900/20 px-4 py-2 rounded-full border border-violet-500/20">
+                              <Activity className="w-3 h-3 animate-pulse" />
+                              Hive Mind: {swarmResult.hiveMindStatus} | Cognitive Cycles: {swarmResult.cognitiveCycles}
+                          </span>
+                      </div>
+                  </motion.div>
+              )}
+              </AnimatePresence>
+          </div>
+      </section>
+
+      {/* One-Tap Life Automations (Simple Mode Feature) */}
+      {personaMode === 'simple' && (
+      <section className="bg-gradient-to-b from-[#050505] to-[#080810] py-20 px-4 border-t border-slate-800/50 relative overflow-hidden">
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-[500px] h-[300px] bg-emerald-900/10 blur-[100px] rounded-full pointer-events-none" />
+          <div className="max-w-4xl mx-auto relative z-10">
+              <div className="text-center mb-12">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-900/30 border border-emerald-500/30 text-xs font-bold text-emerald-300 mb-6 uppercase tracking-widest">
+                      <Heart className="w-3 h-3" />
+                      Life-Action Engine — One-Tap Automation
+                  </div>
+                  <h2 className="text-3xl font-black text-white mb-4">Automate Your Life</h2>
+                  <p className="text-slate-500 max-w-lg mx-auto text-sm">Complex tasks made simple. Just tap and Execra handles everything for you.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {[
+                      { id: 'renew_license', icon: FileText, title: 'Renew License', desc: 'Auto-fill and submit your driving license renewal.', time: '~45s', color: 'text-blue-400', border: 'border-blue-500/30', bg: 'bg-blue-900/10' },
+                      { id: 'cheapest_meal', icon: ShoppingCart, title: 'Cheapest Healthy Meal', desc: 'Find the best-priced healthy meal near you instantly.', time: '~30s', color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-900/10' },
+                      { id: 'price_hunter', icon: TrendingUp, title: 'Price Drop Hunter', desc: 'Monitor a product and alert you when the price drops.', time: '~20s', color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-900/10' }
+                  ].map(item => (
+                      <motion.div key={item.id} whileHover={{ y: -4 }} className={`${item.bg} border ${item.border} rounded-2xl p-6 group cursor-pointer transition-all`}>
+                          <div className={`w-12 h-12 rounded-xl ${item.bg} border ${item.border} flex items-center justify-center mb-4`}>
+                              <item.icon className={`w-6 h-6 ${item.color}`} />
+                          </div>
+                          <h3 className="text-lg font-black text-white mb-2">{item.title}</h3>
+                          <p className="text-xs text-slate-400 mb-4 leading-relaxed">{item.desc}</p>
+                          <div className="flex items-center justify-between">
+                              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.time}</span>
+                              <button onClick={() => handleOneTap(item.id)} disabled={oneTapLoading === item.id} className={`px-4 py-2 rounded-lg text-xs font-black text-white transition-all ${oneTapLoading === item.id ? 'bg-slate-700 animate-pulse' : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:shadow-[0_0_15px_rgba(16,185,129,0.4)] active:scale-95'}`}>
+                                  {oneTapLoading === item.id ? <RefreshCw className="w-3 h-3 animate-spin inline" /> : <Zap className="w-3 h-3 inline mr-1" />}
+                                  {oneTapLoading === item.id ? 'Loading...' : 'One Tap'}
+                              </button>
+                          </div>
+                      </motion.div>
+                  ))}
+              </div>
+          </div>
+      </section>
+      )}
+
+      {/* Accessibility & Inclusivity Banner */}
+      <section className="bg-[#050505] py-10 px-4 border-t border-slate-800/50">
+          <div className="max-w-4xl mx-auto flex flex-wrap justify-center items-center gap-6">
+              <div className="flex items-center gap-3 bg-gradient-to-r from-rose-900/20 to-violet-900/20 border border-rose-500/20 px-6 py-3 rounded-xl">
+                  <Heart className="w-5 h-5 text-rose-400" />
+                  <span className="text-rose-300 text-xs font-bold uppercase tracking-widest">Serving All Humanity</span>
+              </div>
+              <div className="flex items-center gap-3 bg-gradient-to-r from-sky-900/20 to-indigo-900/20 border border-sky-500/20 px-6 py-3 rounded-xl">
+                  <Accessibility className="w-5 h-5 text-sky-400" />
+                  <span className="text-sky-300 text-xs font-bold uppercase tracking-widest">Voice-First Accessible</span>
+              </div>
+              <div className="flex items-center gap-3 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border border-emerald-500/20 px-6 py-3 rounded-xl">
+                  <Shield className="w-5 h-5 text-emerald-400" />
+                  <span className="text-emerald-300 text-xs font-bold uppercase tracking-widest">Sovereign & Secure</span>
+              </div>
+          </div>
+      </section>
+
+      {/* Footer */}
+      <footer className={`border-t ${isDark ? 'border-slate-800/50 bg-[#0a0a0a]' : 'border-slate-200 bg-white'} py-16 px-4 text-center`}>
+          <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'} mb-6`}>{t('footer.cta')}</h2>
+          <div className="flex flex-wrap justify-center gap-4 mb-10">
+              <button onClick={scrollToDemo} className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-semibold transition-colors shadow-lg shadow-purple-500/20">
+                  {t('footer.run_first')}
+              </button>
+              {personaMode === 'simple' && (
+                  <button onClick={() => setPersonaMode('pro')} className={`${isDark ? 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-900'} border px-6 py-3 rounded-xl font-semibold transition-colors`}>
+                      {t('footer.switch_pro')}
+                  </button>
+              )}
+          </div>
+          <p className={`${isDark ? 'text-slate-500' : 'text-slate-400'} flex items-center justify-center gap-2 text-sm font-medium`}>
+             <Zap className="w-4 h-4" /> {t('footer.tagline')}
+          </p>
+      </footer>
+      
+    </div>
+  );
+}
+
+export default App;

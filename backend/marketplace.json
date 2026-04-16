@@ -1,0 +1,35 @@
+[
+  {
+    "id": "tpl_1029",
+    "name": "Amazon ➔ Twitter ➔ Slack Alert",
+    "author": "OrchestratorX",
+    "price": "$4.99",
+    "commission": "30%",
+    "affiliateEligible": true,
+    "votes": 1420,
+    "description": "Cross-App: Tracks Amazon price drops, tweets the product automatically via X API, and alerts the team on Slack.",
+    "badges": ["Premium", "Cross-App"]
+  },
+  {
+    "id": "tpl_882",
+    "name": "LinkedIn Outreach Bot",
+    "author": "GrowthHacker_99",
+    "price": "Free",
+    "commission": "0%",
+    "affiliateEligible": false,
+    "votes": 850,
+    "description": "Auto-navigates LinkedIn profiles, extracts emails, and sends them to your CRM.",
+    "badges": ["Community", "Stealth Required"]
+  },
+  {
+    "id": "tpl_12",
+    "name": "E-Commerce Competitor NLP Scraper",
+    "author": "DataGod",
+    "price": "$12.00",
+    "commission": "40%",
+    "affiliateEligible": true,
+    "votes": 3410,
+    "description": "Extracts full product specs from 5 major retailers and outputs competitive generative AI pricing insights.",
+    "badges": ["Best Seller", "Analytics"]
+  }
+]
