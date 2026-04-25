@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Settings,
   Key,
   Globe,
   Shield,
@@ -16,7 +15,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const Section: React.FC<{ icon: React.ElementType; title: string; subtitle: string; children: React.ReactNode }> = ({
+const Section: React.FC<{ icon: any; title: string; subtitle: string; children: React.ReactNode }> = ({
   icon: Icon, title, subtitle, children,
 }) => (
   <motion.div
@@ -26,7 +25,7 @@ const Section: React.FC<{ icon: React.ElementType; title: string; subtitle: stri
   >
     <div className="flex items-center gap-3 mb-6">
       <div className="w-10 h-10 rounded-xl bg-purple-600/10 border border-purple-500/20 flex items-center justify-center">
-        {Icon ? <Icon className="w-5 h-5 text-purple-400" /> : <div className="w-5 h-5 bg-slate-800 rounded" />}
+        {Icon ? <Icon className="w-5 h-5 text-purple-400" /> : <Shield className="w-5 h-5 text-purple-400" />}
       </div>
       <div>
         <h2 className="text-base font-black text-white tracking-tight">{title}</h2>
@@ -53,41 +52,45 @@ const inputCls =
   'w-full bg-slate-800/50 border border-white/5 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 transition-all placeholder:text-slate-600';
 
 export const SettingsPage: React.FC = () => {
-  const savedUser = (() => {
-    try {
-      const data = localStorage.getItem('user');
-      return data ? JSON.parse(data) : {};
-    } catch (e) {
-      console.warn('Failed to parse user from localStorage', e);
-      return {};
-    }
-  })();
-
-  const [apiUrl, setApiUrl] = useState(
-    (() => {
-      try {
-        return (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000';
-      } catch (e) {
-        return 'http://localhost:4000';
-      }
-    })(),
-  );
-  const [name, setName] = useState(savedUser.name || '');
-  const [email, setEmail] = useState(savedUser.email || '');
-  const [showKey, setShowKey] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [apiUrl, setApiUrl] = useState('http://localhost:4000');
   const [openaiKey, setOpenaiKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.name) setName(user.name);
+        if (user.email) setEmail(user.email);
+      }
+      
+      // Safe env access
+      const envUrl = (import.meta as any).env?.VITE_API_URL;
+      if (envUrl) setApiUrl(envUrl);
+    } catch (e) {
+      console.error('Settings init error:', e);
+    }
+  }, []);
+
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 800));
-    const updated = { ...savedUser, name, email };
-    localStorage.setItem('user', JSON.stringify(updated));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      await new Promise((r) => setTimeout(r, 800));
+      const user = { name, email };
+      localStorage.setItem('user', JSON.stringify(user));
+      setSaving(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      setSaving(false);
+      console.error('Save error:', e);
+    }
   };
 
   return (
