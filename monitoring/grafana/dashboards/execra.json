@@ -1,0 +1,59 @@
+{
+  "title": "Execra Dashboard",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP Requests per second",
+      "targets": [
+        {
+          "expr": "rate(autopilot_http_requests_total[1m])",
+          "legendFormat": "{{method}} {{route}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Response time",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(autopilot_http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(autopilot_http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(autopilot_http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Error rate (5xx)",
+      "targets": [
+        {
+          "expr": "rate(autopilot_http_requests_total{status_code=~\"5..\"}[5m])",
+          "legendFormat": "Errors"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "type": "stat",
+      "title": "Active connections",
+      "targets": [
+        {
+          "expr": "autopilot_nodejs_active_requests_total",
+          "legendFormat": "Active"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+    }
+  ],
+  "schemaVersion": 16,
+  "version": 0
+}

@@ -100,9 +100,11 @@ function App() {
   const toggleLanguage = () => i18n.changeLanguage(currentLang === 'ar' ? 'en' : 'ar');
   const isDark = theme === 'dark';
 
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
   const fetchNeuralMemory = async () => {
       try {
-          const res = await fetch('http://localhost:3001/api/neural-memory');
+          const res = await fetch(`${API_BASE}/api/neural-memory`);
           const data = await res.json();
           setNeuralMemory(data);
       } catch(e) {}
@@ -110,14 +112,14 @@ function App() {
 
   const fetchMarketplace = async () => {
       try {
-          const res = await fetch('http://localhost:3001/api/marketplace');
+          const res = await fetch(`${API_BASE}/api/marketplace`);
           if (res.ok) setMarketplaceItems(await res.json());
       } catch (e) {}
   };
 
   const fetchAnalytics = async () => {
       try {
-          const res = await fetch('http://localhost:3001/api/analytics');
+          const res = await fetch(`${API_BASE}/api/analytics`);
           if (res.ok) setAnalytics(await res.json());
       } catch (e) {}
   };
@@ -126,7 +128,7 @@ function App() {
       setIsEnvChecking(true);
       setStatus('🔍 Verifying automation engine & video tools...');
       try {
-          const res = await fetch('http://localhost:3001/api/check-environment');
+          const res = await fetch(`${API_BASE}/api/check-environment`);
           const data = await res.json();
           
           if (data.browsers && data.ffmpeg) {
@@ -138,7 +140,7 @@ function App() {
               if (!data.ffmpeg) msg += 'Installing FFmpeg (via Brew)... ';
               
               setStatus(msg);
-              const setupRes = await fetch('http://localhost:3001/api/setup-environment', { method: 'POST' });
+              const setupRes = await fetch(`${API_BASE}/api/setup-environment`, { method: 'POST' });
               if (setupRes.ok) {
                   setIsEnvReady(true);
                   setStatus('');
@@ -251,7 +253,7 @@ function App() {
     formData.append('video', file);
 
     try {
-        const response = await fetch('http://localhost:3001/api/process-video', {
+        const response = await fetch(`${API_BASE}/api/process-video`, {
             method: 'POST',
             body: formData,
         });
@@ -279,7 +281,7 @@ function App() {
       setIsProcessing(true);
       setStatus('🧠 AI is orchestrating workflow...');
       try {
-          const res = await fetch('http://localhost:3001/api/chat-to-workflow', {
+          const res = await fetch(`${API_BASE}/api/chat-to-workflow`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ prompt: activePrompt })
@@ -360,7 +362,7 @@ function App() {
       setStatus('Mega-Context: Parsing enormous architecture payload natively...');
       await new Promise(r => setTimeout(r, 2000));
       try {
-          const res = await fetch('http://localhost:3001/api/analyze-architecture', { method: 'POST' });
+          const res = await fetch(`${API_BASE}/api/analyze-architecture`, { method: 'POST' });
           const data = await res.json();
           if (data.success) {
               setSteps(data.steps);
@@ -395,7 +397,7 @@ function App() {
       setSwarmResult(null);
       const interval = setInterval(() => setCognitiveCycles(prev => prev + 1), 400);
       try {
-          const res = await fetch('http://localhost:3001/api/engage-swarm', { method: 'POST' });
+          const res = await fetch(`${API_BASE}/api/engage-swarm`, { method: 'POST' });
           const data = await res.json();
           if (data.success) setSwarmResult(data);
       } catch(e) {
@@ -408,7 +410,7 @@ function App() {
   const handleOneTap = async (actionId) => {
       setOneTapLoading(actionId);
       try {
-          const res = await fetch('http://localhost:3001/api/life-action', {
+          const res = await fetch(`${API_BASE}/api/life-action`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ actionId })
@@ -443,7 +445,7 @@ function App() {
       startTimer();
       
       try {
-        const response = await fetch('http://localhost:3001/api/run-workflow', {
+        const response = await fetch(`${API_BASE}/api/run-workflow`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ steps: runSteps, proxyNode }),
@@ -575,7 +577,7 @@ function App() {
   const handleSchedule = async () => {
        if (!steps) return;
        try {
-           const res = await fetch('http://localhost:3001/api/schedule', {
+           const res = await fetch(`${API_BASE}/api/schedule`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ scheduleStr: scheduleCron, steps })
@@ -591,7 +593,7 @@ function App() {
   const handleGenerateInsights = async () => {
       setIsGeneratingReport(true);
       try {
-           const res = await fetch('http://localhost:3001/api/generate-insights', {
+           const res = await fetch(`${API_BASE}/api/generate-insights`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ extractedData })
@@ -606,7 +608,7 @@ function App() {
 
   const downloadCSV = () => {
       if (extractedData.length === 0) return;
-      const csvContent = "data:text/csv;charset=utf-8,Extracted Values\\n" + extractedData.map(e => `"${e.replace(/"/g, '""')}"`).join("\\n");
+      const csvContent = "data:text/csv;charset=utf-8,Extracted Values\n" + extractedData.map(e => `"${e.replace(/"/g, '""')}"`).join("\n");
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
