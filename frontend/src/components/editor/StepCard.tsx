@@ -1,6 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { WorkflowStep } from '../../types';
-import { GripVertical, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { 
+  ChevronDown, 
+  Trash2, 
+  MousePointer2, 
+  Type, 
+  Globe, 
+  Eye, 
+  Keyboard, 
+  Clock,
+  ChevronRight
+} from 'lucide-react';
 
 interface Props {
   index: number;
@@ -10,136 +21,115 @@ interface Props {
 }
 
 export const StepCard: React.FC<Props> = ({ index, step, onUpdate, onDelete }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const getIcon = () => {
+    switch (step.action) {
+      case 'navigate': return <Globe className="w-5 h-5 text-blue-400" />;
+      case 'click': return <MousePointer2 className="w-5 h-5 text-purple-400" />;
+      case 'type': return <Keyboard className="w-5 h-5 text-emerald-400" />;
+      case 'extract': return <Eye className="w-5 h-5 text-amber-400" />;
+      default: return <Clock className="w-5 h-5 text-slate-400" />;
+    }
+  };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-      <div className="p-4 flex items-center gap-3">
-        <GripVertical className="w-5 h-5 text-gray-400 cursor-move" />
-        
-        <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm">
-          {step.step_id}
+    <motion.div 
+      layout
+      className="bg-slate-900/60 border border-white/5 rounded-2xl overflow-hidden group hover:border-white/10 transition-all"
+    >
+      <div className="p-4 flex items-center gap-4 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
+        <div className="w-8 h-8 rounded-lg bg-slate-800 border border-white/5 flex items-center justify-center font-bold text-xs text-slate-500">
+          {index + 1}
         </div>
-        
+        <div className="bg-slate-800/50 p-2 rounded-lg">
+          {getIcon()}
+        </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium uppercase">
-              {step.action}
-            </span>
-            <span className="text-sm text-gray-700 truncate">
-              {step.description || 'لا يوجد وصف'}
-            </span>
-          </div>
+          <p className="text-sm font-black text-white uppercase tracking-wider">{step.action}</p>
+          <p className="text-xs text-slate-500 truncate">{step.description || step.target_url || step.target?.value || 'Configure step...'}</p>
         </div>
-
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="p-1 hover:bg-gray-100 rounded"
-        >
-          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-        
-        <button
-          onClick={onDelete}
-          className="p-1 hover:bg-red-50 text-red-500 rounded"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="p-2 opacity-0 group-hover:opacity-100 text-slate-600 hover:text-red-400 transition-all"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          <ChevronDown className={`w-5 h-5 text-slate-600 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
       </div>
 
-      {isExpanded && (
-        <div className="px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">الإجراء</label>
-              <select
+      {isOpen && (
+        <motion.div 
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          className="px-4 pb-6 pt-2 border-t border-white/5 space-y-4"
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Action Type</label>
+              <select 
                 value={step.action}
                 onChange={(e) => onUpdate({ ...step, action: e.target.value as any })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full bg-slate-800 border border-white/5 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
               >
-                <option value="navigate">انتقال</option>
-                <option value="click">نقر</option>
-                <option value="type">كتابة</option>
-                <option value="extract">استخراج</option>
-                <option value="press">ضغط مفتاح</option>
-                <option value="wait">انتظار</option>
-                <option value="scroll">تمرير</option>
+                <option value="navigate">Navigate</option>
+                <option value="click">Click</option>
+                <option value="type">Type</option>
+                <option value="extract">Extract</option>
+                <option value="wait">Wait</option>
               </select>
             </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">الوصف</label>
-              <input
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Description</label>
+              <input 
                 type="text"
                 value={step.description || ''}
                 onChange={(e) => onUpdate({ ...step, description: e.target.value })}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                placeholder="What does this do?"
+                className="w-full bg-slate-800 border border-white/5 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
             </div>
           </div>
 
-          {step.target && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">الاستراتيجية</label>
-                <select
-                  value={step.target.strategy}
-                  onChange={(e) => onUpdate({
-                    ...step,
-                    target: { ...step.target!, strategy: e.target.value }
-                  })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                >
-                  <option value="text_content">نص</option>
-                  <option value="css_selector">CSS Selector</option>
-                  <option value="xpath">XPath</option>
-                  <option value="placeholder">Placeholder</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">القيمة المستهدفة</label>
-                <input
-                  type="text"
-                  value={step.target.value}
-                  onChange={(e) => onUpdate({
-                    ...step,
-                    target: { ...step.target!, value: e.target.value }
-                  })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                />
-              </div>
+          {step.action === 'navigate' && (
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Target URL</label>
+              <input 
+                type="text"
+                value={step.target_url || ''}
+                onChange={(e) => onUpdate({ ...step, target_url: e.target.value })}
+                className="w-full bg-slate-800 border border-white/5 rounded-xl py-2 px-3 text-sm text-white font-mono"
+              />
             </div>
           )}
 
-          <div className="flex items-center gap-4 pt-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={step.stealth?.humanize ?? true}
-                onChange={(e) => onUpdate({
-                  ...step,
-                  stealth: { ...step.stealth, humanize: e.target.checked }
-                })}
-                className="rounded border-gray-300"
+          {(step.action === 'click' || step.action === 'type' || step.action === 'extract') && (
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Selector (CSS/XPath)</label>
+              <input 
+                type="text"
+                value={step.target?.value || ''}
+                onChange={(e) => onUpdate({ ...step, target: { ...step.target!, strategy: 'css', value: e.target.value } })}
+                className="w-full bg-slate-800 border border-white/5 rounded-xl py-2 px-3 text-sm text-white font-mono"
               />
-              محاكاة بشرية
-            </label>
-            
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={step.audit?.screenshot_before ?? true}
-                onChange={(e) => onUpdate({
-                  ...step,
-                  audit: { ...step.audit, screenshot_before: e.target.checked }
-                })}
-                className="rounded border-gray-300"
+            </div>
+          )}
+
+          {step.action === 'type' && (
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Input Value</label>
+              <input 
+                type="text"
+                value={step.input_value || ''}
+                onChange={(e) => onUpdate({ ...step, input_value: e.target.value })}
+                className="w-full bg-slate-800 border border-white/5 rounded-xl py-2 px-3 text-sm text-white"
               />
-              لقطة قبل
-            </label>
-          </div>
-        </div>
+            </div>
+          )}
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };

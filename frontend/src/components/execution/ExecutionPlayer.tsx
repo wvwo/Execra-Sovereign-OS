@@ -93,8 +93,7 @@ export const ExecutionPlayer: React.FC<Props> = ({ workflow }) => {
 
       <CaptchaModal
         isOpen={captchaDetected}
-        onResolved={resolveCaptcha}
-        sessionId={workflow.session_id}
+        onResolve={resolveCaptcha}
       />
     </div>
   );
