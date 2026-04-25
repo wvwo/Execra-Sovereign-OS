@@ -15,9 +15,7 @@ coverage
 core_logic_backup/
 
 # Sensitive / large binary files — never commit
-HumanoidBehavior.js
 pentest.sh
-audit_log.json
 auth_status.txt
 *.mp4
 uploads/
