@@ -26,7 +26,7 @@ const Section: React.FC<{ icon: React.ElementType; title: string; subtitle: stri
   >
     <div className="flex items-center gap-3 mb-6">
       <div className="w-10 h-10 rounded-xl bg-purple-600/10 border border-purple-500/20 flex items-center justify-center">
-        <Icon className="w-5 h-5 text-purple-400" />
+        {Icon ? <Icon className="w-5 h-5 text-purple-400" /> : <div className="w-5 h-5 bg-slate-800 rounded" />}
       </div>
       <div>
         <h2 className="text-base font-black text-white tracking-tight">{title}</h2>
@@ -53,10 +53,24 @@ const inputCls =
   'w-full bg-slate-800/50 border border-white/5 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40 transition-all placeholder:text-slate-600';
 
 export const SettingsPage: React.FC = () => {
-  const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const savedUser = (() => {
+    try {
+      const data = localStorage.getItem('user');
+      return data ? JSON.parse(data) : {};
+    } catch (e) {
+      console.warn('Failed to parse user from localStorage', e);
+      return {};
+    }
+  })();
 
   const [apiUrl, setApiUrl] = useState(
-    (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000',
+    (() => {
+      try {
+        return (import.meta as any).env?.VITE_API_URL || 'http://localhost:4000';
+      } catch (e) {
+        return 'http://localhost:4000';
+      }
+    })(),
   );
   const [name, setName] = useState(savedUser.name || '');
   const [email, setEmail] = useState(savedUser.email || '');
