@@ -8,7 +8,7 @@ import { apiLimiter } from './middleware/rateLimit';
 import { errorHandler } from './middleware/errorHandler';
 import http from 'http';
 import { setupWebSocket } from './services/websocket';
-import { metricsMiddleware, metricsEndpoint } from './utils/metrics';
+// metricsMiddleware / metricsEndpoint disabled for cloud deployments (prom-client not compatible with serverless)
 import cookieParser from 'cookie-parser';
 import legacyRoutes from './legacyRoutes';
 import swaggerUi from 'swagger-ui-express';
@@ -17,10 +17,17 @@ import { swaggerSpec } from './swagger';
 const app = express();
 const server = http.createServer(app);
 
-app.use(metricsMiddleware);
-
 app.use(helmet());
-app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'], credentials: true }));
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://process-autopilot.vercel.app',
+    /^https:\/\/.*\.vercel\.app$/,
+  ],
+  credentials: true,
+}));
 
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
@@ -54,15 +61,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'healthy', service: 'backend-api', timestamp: new Date().toISOString() });
 });
 
-// Metrics — only accessible from internal Docker network (Prometheus)
-app.get('/metrics', (req, res, next) => {
-  const ip = req.ip || req.socket.remoteAddress || '';
-  // Allow localhost, Docker internal networks (172.x, 10.x), and IPv6 loopback
-  if (ip === '127.0.0.1' || ip === '::1' || ip.startsWith('172.') || ip.startsWith('10.') || ip === '::ffff:127.0.0.1') {
-    return metricsEndpoint(req, res);
-  }
-  res.status(403).json({ error: 'Metrics access restricted to internal network' });
-});
+// /metrics endpoint disabled — use Docker/Prometheus scraping in self-hosted environments only
 
 app.use(errorHandler);
 

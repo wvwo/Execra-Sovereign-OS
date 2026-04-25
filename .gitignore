@@ -3,6 +3,7 @@ node_modules
 .env.*
 !.env.example
 !.env.production.example
+backend/.env
 *.key
 *.pem
 *.p12
@@ -12,4 +13,16 @@ dist
 public
 coverage
 core_logic_backup/
+
+# Sensitive / large binary files — never commit
+HumanoidBehavior.js
+pentest.sh
+audit_log.json
+auth_status.txt
+*.mp4
+uploads/
+frames/
+tmp/
+eng.traineddata
+audit_logs/
 

@@ -63,6 +63,37 @@ k6 run load-tests/stress.js
 
 ---
 
+## 🚀 Quick Deploy
+
+### Frontend → Vercel (one-click)
+1. Import this repo in [vercel.com/new](https://vercel.com/new)
+2. Vercel auto-detects `vercel.json` — no framework override needed
+3. Add environment variable in Vercel dashboard:
+
+| Variable | Value |
+|---|---|
+| `VITE_API_URL` | `https://your-backend.railway.app` |
+
+### Backend → Railway
+1. New project → **Deploy from GitHub repo**
+2. Set **Root Directory** to `backend/`
+3. Railway auto-runs `npm install && npm run build && npm start`
+4. Add a **PostgreSQL** plugin inside Railway (auto-sets `DATABASE_URL`)
+5. Set all required environment variables (see below)
+
+### Required Environment Variables (backend)
+```
+JWT_SECRET=
+REFRESH_TOKEN_SECRET=
+OPENAI_API_KEY=
+DATABASE_URL=              # auto-set by Railway PostgreSQL plugin
+REDIS_URL=                 # optional — falls back to in-memory rate limiting
+SENTINEL_API_KEY=
+FRONTEND_URL=https://your-app.vercel.app
+```
+
+---
+
 ## 🔄 CI/CD Pipeline
 *   **Type Safety**: `tsc --noEmit` validation on every push.
 *   **Security Gates**: `npm audit` blocks any merge with **Critical** vulnerabilities.
