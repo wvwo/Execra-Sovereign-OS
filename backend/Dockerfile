@@ -23,6 +23,8 @@ RUN npm run build
 # --- Production stage ---
 FROM node:22-slim
 
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd -r appuser && useradd -r -g appuser -s /bin/false appuser
 
 WORKDIR /app
