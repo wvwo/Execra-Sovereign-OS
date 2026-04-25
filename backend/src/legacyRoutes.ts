@@ -477,7 +477,7 @@ const upload = multer({
 });
 
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
+    apiKey: process.env.OPENAI_API_KEY || 'sk-placeholder-will-fail-gracefully'
 });
 
 // 1. Upload Video & Extract Frames & OCR
