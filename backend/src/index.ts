@@ -28,9 +28,12 @@ app.use(cookieParser());
 app.use(apiLimiter);
 
 // Routes
+import authRoutes from './routes/auth';
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workflows', workflowRoutes);
 app.use('/api/v1/execute', executionRoutes);
 app.use('/', legacyRoutes);
+
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

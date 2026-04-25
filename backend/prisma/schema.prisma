@@ -12,13 +12,15 @@ model User {
   email         String     @unique
   name          String?
   avatar        String?
-  googleId      String     @unique
+  passwordHash  String?
+  googleId      String?    @unique
   role          String     @default("user") // user | admin | security_officer | auditor
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   workflows     Workflow[]
   sessions      Session[]
 }
+
 
 model Session {
   id            String     @id @default(uuid())

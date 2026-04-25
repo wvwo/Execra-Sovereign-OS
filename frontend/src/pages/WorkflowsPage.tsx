@@ -28,7 +28,9 @@ export const WorkflowsPage: React.FC = () => {
   const fetchWorkflows = async () => {
     try {
       const res = await api.get('/workflows');
-      setWorkflows(res.data);
+      const data = res.data;
+      setWorkflows(Array.isArray(data) ? data : data.workflows || []);
+
     } catch (err) {
       console.error('Failed to fetch workflows', err);
     } finally {
