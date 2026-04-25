@@ -1,34 +1,70 @@
-<div align="center">
-  <h1>⚡ Execra Sovereign OS v7.0 ⚡</h1>
-  <h3>The Hex-Core Pantheon Architecture</h3>
-  <p><i>"Absolute Sovereignty. Zero-Trust Local Extinction of PII."</i></p>
-</div>
+# ⚡ Execra Sovereign OS v7 ⚡
+
+> **Enterprise AI Workflow Automation Platform**
+> *Absolute Sovereignty. Zero-Trust Local Extinction of PII.*
 
 ---
 
-## 🌌 Overview
+## 🌌 Architecture
+Execra operates on the **Hex-Core Pantheon Architecture**, ensuring high performance and absolute data privacy.
 
-**Execra Sovereign OS** introduces the revolutionary **Hex-Core Pantheon Architecture**. Designed for multi-threaded autonomous operations, it obliterates latency and preserves absolute data privacy by routing complex UI automation directly to the local node. 
-
-The architecture guarantees:
-- **100% Local Inferencing**
-- **Zero-Trust PII Redaction**
-- **Decentralized Cognitive Processing**
-
-## 🛑 Local Sovereignty First
-
-Our enterprise code dictates that cloud execution is entirely omitted. In the interest of compliance and data governance (PDPL/GDPR), core automation logic runs entirely on local, isolated containers on client hardware.
-
-## ⚙️ Hex-Core Architecture Breakdown
-
-1. **Alpha Proxy Core:** Handles initial request parsing and ambient intent mapping. 
-2. **Sigma Sanitization Core:** Triggers Llama-Σ scanning on payloads. Obfuscates any National IDs, Phone Numbers, and PII via `AES-256-GCM` before the swarm touches it.
-3. **Delta Auto-Heal Engine:** Visual AI healing. Adjusts CSS and DOM drift in real time using local computer vision models.
-4. **Omega Execution Plane:** Headless Chromium orchestrator optimized for parallel processing.
-5. **Epsilon Memory Archivist:** Retains local context states with non-volatile indexing for cross-session cognitive continuity.
-6. **Zeta Audit Log:** Produces immediate JSON traces mapping precise cryptographic hashes to all state mutations.
+| Service | Technology | Port |
+|---------|------------|------|
+| **Frontend** | Vite + TypeScript | 3000 |
+| **Backend API** | Node.js + Express + WS | 3001 |
+| **Vision Engine** | Python VLM Service | 8000 |
+| **Sentinel** | Security & Audit | 8001 |
+| **Database** | PostgreSQL 15 | 5432 |
+| **Cache** | Redis 7 | 6379 |
+| **Storage** | MinIO (S3 Compatible) | 9000/9001 |
 
 ---
 
-> [!IMPORTANT]
-> The core automation logic is omitted from the public repository to enforce Local Sovereignty validation. Check the internal secure deployment instructions for loading the executable Pantheon Swarm logic locally.
+## ⚙️ Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/execra.git
+cd execra
+
+# Start the entire stack
+docker compose up -d
+```
+
+---
+
+## 🛡️ Security
+*   **Zero-Trust PII Redaction**: Core automation logic runs entirely on local, isolated containers.
+*   **AES-256-GCM Encryption**: Encrypts all sensitive state mutations.
+*   **Sentinel Guard**: Real-time monitoring of security audit logs.
+*   **Rate Limiting**: Integrated protection against automated abuse.
+
+---
+
+## 📊 Monitoring & Documentation
+*   **Grafana Dashboard**: [http://localhost:3002](http://localhost:3002)
+*   **Prometheus Metrics**: [http://localhost:9090](http://localhost:9090)
+*   **API Documentation**: [http://localhost:3001/api-docs](http://localhost:3001/api-docs)
+*   **Internal Metrics**: [http://localhost:3001/metrics](http://localhost:3001/metrics)
+
+---
+
+## 🚀 Load Testing (k6)
+
+Validate performance thresholds locally or in CI:
+
+```bash
+# Smoke test (Quick validation)
+k6 run load-tests/smoke.js
+
+# Stress test (Full system load)
+k6 run load-tests/stress.js
+```
+
+---
+
+## 🔄 CI/CD Pipeline
+*   **Type Safety**: `tsc --noEmit` validation on every push.
+*   **Security Gates**: `npm audit` blocks any merge with **Critical** vulnerabilities.
+*   **Automated Builds**: Docker images are built and tagged on merge to `main`.
+*   **Continuous Testing**: Load tests run automatically on deployment to staging.

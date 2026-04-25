@@ -1,0 +1,124 @@
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: execra_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: always
+
+  frontend:
+    build: ./frontend
+    environment:
+      - NODE_ENV=production
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - VISION_ENGINE_URL=http://vision:8000
+      - SENTINEL_URL=http://sentinel:8001
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_URL=postgresql://autopilot:${DB_PASSWORD}@postgres:5432/autopilot
+      - SENTINEL_API_KEY=${SENTINEL_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - vision
+      - sentinel
+      - redis
+      - postgres
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  vision:
+    build: ./vision
+    restart: always
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  sentinel:
+    build: ./sentinel
+    restart: always
+    environment:
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL}
+      - SENTINEL_API_KEY=${SENTINEL_API_KEY}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    restart: always
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=autopilot
+      - POSTGRES_USER=autopilot
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  minio:
+    image: minio/minio:RELEASE.2023-11-20T22-40-07Z
+    restart: always
+    container_name: autopilot-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+
+  execution:
+    build: ./execution
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - SENTINEL_URL=http://sentinel:8001
+      - SENTINEL_API_KEY=${SENTINEL_API_KEY}
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - S3_BUCKET=autopilot-screenshots
+    depends_on:
+      - sentinel
+      - minio
+
+volumes:
+  postgres_data:
+  minio_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: execra_network

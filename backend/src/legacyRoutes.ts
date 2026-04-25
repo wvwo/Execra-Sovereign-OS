@@ -1,3 +1,4 @@
+// @ts-nocheck
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -9,10 +10,11 @@ const Tesseract = require('tesseract.js');
 const { OpenAI } = require('openai');
 const os = require('os');
 const { exec } = require('child_process');
-const integrationManager = require('./IntegrationManager');
-const memoryArchivist = require('./MemoryArchivist');
-const HumanoidBehavior = require('./HumanoidBehavior');
-const auditLog = require('./AuditLog');
+const integrationManager = require('../IntegrationManager');
+const memoryArchivist = require('../MemoryArchivist');
+const HumanoidBehavior = require('../HumanoidBehavior');
+const auditLog = require('../AuditLog');
+const vm = require('vm');
 
 let chromium;
 try {
@@ -162,21 +164,25 @@ class AdaptiveEngine {
                 // NEURAL MEMORY: Check if we've solved this before
                 const currentDomain = this.page.url() ? new URL(this.page.url()).hostname : 'unknown';
                 const memoryResult = memoryArchivist.recall(step, currentDomain);
-                if (memoryResult.found) {
-                    this.sendEvent({ status: 'healing', message: `[Neural Memory]: Cache HIT! Applying stored solution (${memoryResult.hitCount} prior successes)...` });
-                    try {
-                        if (memoryResult.solution.type === 'selector') {
-                            if (step.action === 'click') await this.page.click(memoryResult.solution.value);
-                            else if (step.action === 'type') await this.page.fill(memoryResult.solution.value, step.value);
-                            return { status: 'success' };
-                        } else if (memoryResult.solution.type === 'js_code') {
-                            await this.page.evaluate(memoryResult.solution.value);
-                            return { status: 'success' };
+                    if (memoryResult.found) {
+                        this.sendEvent({ status: 'healing', message: `[Neural Memory]: Cache HIT! Applying stored solution (${memoryResult.hitCount} prior successes)...` });
+                        try {
+                            if (memoryResult.solution.type === 'selector') {
+                                // Validate selector before use
+                                const selectorPattern = /^[a-zA-Z0-9\s\[\]\(\)\*\.#:,=>~+\-_"'=@^$|!]+$/;
+                                if (!selectorPattern.test(memoryResult.solution.value) || memoryResult.solution.value.length > 500) {
+                                    this.sendEvent({ status: 'healing', message: `[Neural Memory]: Stored selector failed validation. Skipping.` });
+                                } else {
+                                    if (step.action === 'click') await this.page.click(memoryResult.solution.value);
+                                    else if (step.action === 'type') await this.page.fill(memoryResult.solution.value, step.value);
+                                    return { status: 'success' };
+                                }
+                            }
+                            // js_code execution removed for security — only selector-based solutions allowed
+                        } catch (memErr) {
+                            this.sendEvent({ status: 'healing', message: `[Neural Memory]: Stored solution expired. Escalating...` });
                         }
-                    } catch (memErr) {
-                        this.sendEvent({ status: 'healing', message: `[Neural Memory]: Stored solution expired. Escalating...` });
                     }
-                }
 
                 // DEEP REASONING: Engage Cognitive Sandbox before healing
                 this.sendEvent({ status: 'thinking', message: `[Cognitive Sandbox]: Deep Thinking Engaged. Analyzing 5 bypass scenarios...` });
@@ -318,20 +324,31 @@ class AdaptiveEngine {
     async dynamicCodeMorph(step) {
         if (!process.env.OPENAI_API_KEY) return { success: false };
         try {
-            console.log(`[DeepCodingMode] Generating raw JS payload for step:`, step);
+            console.log(`[DeepCodingMode] Generating sandboxed JS payload for step:`, step);
             const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
             const resp = await openai.chat.completions.create({
                 model: "gpt-4o",
                 messages: [{
                     role: "user",
-                    content: `Write a pure JavaScript function body (as a string) that can be executed in a browser via Playwright page.evaluate() to force the following action: ${JSON.stringify(step)}. Assume the DOM is highly dynamic. Rely on heuristic text matching or broad query selectors. Return ONLY valid JSON: {"success": true, "js_code": "..."}`
+                    content: `Write a pure JavaScript expression (NOT a function) that returns a CSS selector string to locate the element for this action: ${JSON.stringify(step)}. The expression should use heuristic text matching. Return ONLY valid JSON: {"success": true, "selector": "..."}. Do NOT return executable code, only a CSS selector.`
                 }],
                 response_format: { type: "json_object" }
             });
             const resData = JSON.parse(resp.choices[0].message.content);
-            if (resData.success && resData.js_code) {
-                await this.page.evaluate(resData.js_code);
-                return { success: true };
+            if (resData.success && resData.selector) {
+                // Validate selector is safe (no script injection)
+                const selectorPattern = /^[a-zA-Z0-9\s\[\]\(\)\*\.#:,=>~+\-_"'=@^$|!]+$/;
+                if (!selectorPattern.test(resData.selector) || resData.selector.length > 500) {
+                    console.warn('[DeepCode] Suspicious selector rejected:', resData.selector.substring(0, 100));
+                    return { success: false };
+                }
+                // Use the selector safely via Playwright's built-in API (not evaluate)
+                const el = await this.page.$(resData.selector);
+                if (el) {
+                    if (step.action === 'click') await el.click();
+                    else if (step.action === 'type') await this.page.fill(resData.selector, step.value);
+                    return { success: true, newSelector: resData.selector };
+                }
             }
         } catch (e) {
             console.warn('[DeepCode Error]', e.message);
@@ -423,12 +440,22 @@ const rewriteStepsForProactiveShielding = (steps, sendEvent) => {
     return { detected, rewrittenSteps: rewritten };
 };
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const app = express.Router();
+// app.use(cors(...)) removed to avoid duplicate
+// app.use(express.json(...)) removed to avoid duplicate
 
-const uploadDir = path.join(__dirname, 'uploads');
-const framesDir = path.join(__dirname, 'frames');
+// Rate limiting — 60 requests per minute per IP
+const rateLimit = require('express-rate-limit');
+app.use(rateLimit({
+    windowMs: 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Rate limit exceeded. Try again later.' }
+}));
+
+const uploadDir = path.join(__dirname, '../uploads');
+const framesDir = path.join(__dirname, '../frames');
 
 [uploadDir, framesDir].forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir);
@@ -868,7 +895,7 @@ app.post('/api/run-workflow', async (req, res) => {
     } finally {
         if (browser) await browser.close();
         // Force cleanup dangling zombie Chromium processes if hung
-        try { exec('pkill -f "(chrome)?(--type=renderer)" || true'); } catch(e){}
+        // Browser cleanup handled by browser.close() above
         CONCURRENT_CONNECTIONS--;
         res.end();
     }
@@ -931,6 +958,8 @@ app.post('/api/schedule', (req, res) => {
         const task = cron.schedule(scheduleStr, () => {
             console.log("Executing Scheduled Job:", scheduleStr);
             RUN_LOGS.push({ time: new Date().toISOString(), result: "Cron execution spawned via backend event loop" });
+            // Cap RUN_LOGS to prevent unbounded memory growth
+            if (RUN_LOGS.length > 200) RUN_LOGS.splice(0, RUN_LOGS.length - 200);
         });
         
         CRON_JOBS.set(scheduleStr, task);
@@ -1065,7 +1094,8 @@ app.post('/api/engage-swarm', async (req, res) => {
 
 app.post('/api/developer/execute', async (req, res) => {
     const { apiKey, prompt } = req.body;
-    if (!apiKey || apiKey !== 'sk_nx_execra_test_99') return res.status(401).json({ error: "Invalid Execra SDK API Key" });
+    const validKey = process.env.EXECRA_SDK_API_KEY;
+    if (!apiKey || !validKey || apiKey !== validKey) return res.status(401).json({ error: "Invalid Execra SDK API Key" });
     
     console.log(`[Execra SDK] Received external invocation. Mapping intent: ${prompt}`);
     return res.json({
@@ -1525,22 +1555,7 @@ app.get('/api/prophecy/predictions', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-    console.log("\n╔══════════════════════════════════════════════════════════════════════╗");
-    console.log("║  [Execra OS]: Sovereign Ghost Protocol Active.                      ║");
-    console.log("║  We move in the shadows to dominate the light. 👻                   ║");
-    console.log("╚══════════════════════════════════════════════════════════════════════╝");
-    console.log("\n[Universal Protocol]: Execra is now accessible to every human and every enterprise.");
-    console.log("[System Status]: Neural Memory Online. Stealth Protocol Active. Execra is now Evolving.");
-    console.log("[Sovereignty Status]: Hive Mind Active. Swarm Engaged. Deep Reasoning Primed.");
-    console.log("[Nexus Core]: All Connectors & Self-Healing Engines Online.");
-    console.log("[Ghost Protocol]: Platform Evaporation ONLINE | Silent Infiltration ARMED | Phantom Fusion SYNCED");
-    console.log("[Neural Arbitrage]: Multi-Model Router ACTIVE | 6 Models Registered | Cost Optimization LIVE");
-    console.log("[Temporal Prophecy]: Behavioral Pattern Engine LEARNING | Predictive Pre-Staging ARMED");
-    console.log(`[Omni-Tech Core]: Market Analyzed. Innovations Generated. Execra is ready to evolve.`);
-    console.log(`[Ghost Status]: All Security & Digital Walls Phased Through.`);
-    console.log(`Server started on http://localhost:${PORT}\n`);
-});
+// app.listen removed
 
 process.on('uncaughtException', (err) => {
     let str = err && err.stack ? err.stack : String(err);
@@ -1557,3 +1572,5 @@ process.on('unhandledRejection', (reason, promise) => {
     }
     console.error('UNHANDLED REJECTION PREVENTED CRASH:', str);
 });
+
+export default app;

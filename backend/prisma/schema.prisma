@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  name          String?
+  avatar        String?
+  googleId      String     @unique
+  role          String     @default("user") // user | admin | security_officer | auditor
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  workflows     Workflow[]
+  sessions      Session[]
+}
+
+model Session {
+  id            String     @id @default(uuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id])
+  token         String     @unique
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime   @default(now())
+  expiresAt     DateTime
+
+  @@index([userId])
+}
+
+model Workflow {
+  id            String     @id @default(uuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id])
+  title         String
+  startUrl      String
+  status        String     @default("draft") // draft | active | archived | failed
+  steps         Json       // Stored as JSON array
+  variables     Json?      // Extracted variables
+  sessionId     String     @unique
+  metadata      Json?      // {frames_analyzed, tokens_used, cost_usd}
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  executions    Execution[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Execution {
+  id            String     @id @default(uuid())
+  workflowId    String
+  workflow      Workflow   @relation(fields: [workflowId], references: [id])
+  status        String     @default("pending") // pending | running | success | partial | failure
+  startedAt     DateTime?
+  completedAt   DateTime?
+  errorLog      Json?
+  screenshots   String[]   // Array of paths/URLs
+  result        Json?
+  createdAt     DateTime   @default(now())
+
+  @@index([workflowId])
+  @@index([status])
+  @@index([createdAt])
+}
+
