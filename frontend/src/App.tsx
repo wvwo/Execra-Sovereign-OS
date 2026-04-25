@@ -9,6 +9,7 @@ import { WorkflowEditor } from './pages/WorkflowEditor';
 import { ExecutionPage } from './pages/ExecutionPage';
 import { AuditPage } from './pages/AuditPage';
 import { WorkflowsPage } from './pages/WorkflowsPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ function App() {
             <Route path="/editor/:id" element={<WorkflowEditor />} />
             <Route path="/execute/:id" element={<ExecutionPage />} />
             <Route path="/audit" element={<AuditPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
