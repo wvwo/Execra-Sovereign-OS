@@ -17,6 +17,9 @@ import { swaggerSpec } from './swagger';
 const app = express();
 const server = http.createServer(app);
 
+// Trust Railway's reverse proxy (needed for express-rate-limit & correct IP detection)
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(cors({
   origin: [
@@ -36,6 +39,10 @@ app.use(apiLimiter);
 
 // Routes
 import authRoutes from './routes/auth';
+
+// Root health/status route (must be before legacyRoutes catch-all)
+app.get('/', (_req, res) => res.json({ status: 'Execra API v7', health: '/health' }));
+
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workflows', workflowRoutes);
 app.use('/api/v1/execute', executionRoutes);
