@@ -48,7 +48,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({ message: 'Account created', user });
   } catch (err) {
-    console.error('[Auth] Registration error:', (err as Error).message, (err as Error).stack?.split('\n')[1]);
+    console.error('[Auth] Registration error:', JSON.stringify(err, Object.getOwnPropertyNames(err as object)));
     res.status(500).json({ error: 'Registration failed' });
   }
 });
@@ -81,7 +81,7 @@ router.post('/login', async (req, res) => {
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
     });
   } catch (err) {
-    console.error('[Auth] Login error:', (err as Error).message, (err as Error).stack?.split('\n')[1]);
+    console.error('[Auth] Login error:', JSON.stringify(err, Object.getOwnPropertyNames(err as object)));
     res.status(500).json({ error: 'Login failed' });
   }
 });
