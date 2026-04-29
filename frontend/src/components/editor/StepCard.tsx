@@ -47,7 +47,7 @@ export const StepCard: React.FC<Props> = ({ index, step, onUpdate, onDelete }) =
         </div>
         <div className="flex-1">
           <p className="text-sm font-black text-white uppercase tracking-wider">{step.action}</p>
-          <p className="text-xs text-slate-500 truncate">{step.description || step.target_url || step.target?.value || 'Configure step...'}</p>
+          <p className="text-xs text-slate-500 truncate">{step.description || step.target_url || step.target_value || 'Configure step...'}</p>
         </div>
         <div className="flex items-center gap-2">
           <button 
@@ -107,11 +107,11 @@ export const StepCard: React.FC<Props> = ({ index, step, onUpdate, onDelete }) =
 
           {(step.action === 'click' || step.action === 'type' || step.action === 'extract') && (
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Selector (CSS/XPath)</label>
-              <input 
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Target Value</label>
+              <input
                 type="text"
-                value={step.target?.value || ''}
-                onChange={(e) => onUpdate({ ...step, target: { ...step.target!, strategy: 'css', value: e.target.value } })}
+                value={step.target_value || ''}
+                onChange={(e) => onUpdate({ ...step, target_value: e.target.value })}
                 className="w-full bg-slate-800 border border-white/5 rounded-xl py-2 px-3 text-sm text-white font-mono"
               />
             </div>

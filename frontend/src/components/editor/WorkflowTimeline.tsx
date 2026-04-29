@@ -53,7 +53,7 @@ export const WorkflowTimeline: React.FC<Props> = ({ steps, currentStep, status }
                 {step.action}
               </p>
               <p className="text-xs text-slate-600 mt-0.5 truncate max-w-xs">
-                {step.description || step.target_url || step.target?.value || 'Next step...'}
+                {step.description || step.target_url || step.target_value || 'Next step...'}
               </p>
             </div>
           </div>

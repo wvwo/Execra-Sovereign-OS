@@ -1,4 +1,5 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
+import type { AuthRequest as Request } from '../middleware/auth';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth';
 import { redactPII, containsPII } from '../services/privacyShield';
