@@ -79,6 +79,7 @@ app.use(
       'http://localhost:5173',
       'http://localhost:5174',
       'https://process-autopilot.vercel.app',
+      'https://execra-sovereign-os.vercel.app',
       /^https:\/\/.*\.vercel\.app$/,
     ],
     credentials: true,

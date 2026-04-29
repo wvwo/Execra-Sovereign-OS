@@ -3,7 +3,7 @@ import uuid
 import shutil
 import tempfile
 from pathlib import Path
-from fastapi import FastAPI, UploadFile, File, HTTPException, Response
+from fastapi import FastAPI, UploadFile, File, HTTPException, Response, Request
 from extractors.frame_extractor import FrameExtractor
 from analyzers.vlm_client import VLMClient
 from generators.workflow_generator import WorkflowGenerator
@@ -94,6 +94,10 @@ async def analyze_video(file: UploadFile = File(...)):
             temp_video_path.unlink()
         if frames_dir.exists():
             shutil.rmtree(frames_dir)
+
+@app.get("/health")
+def health():
+    return {"status": "healthy", "service": "vision"}
 
 @app.get("/api/v1/vision/health")
 def health_check():

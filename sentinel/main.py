@@ -231,6 +231,10 @@ async def log_audit_event(log: AuditLog):
 async def get_metrics(workflow_id: str, session_id: str):
     return await qa_engine.compute_metrics(workflow_id, session_id)
 
+@app.get("/health")
+def health():
+    return {"status": "healthy", "service": "sentinel", "timestamp": datetime.now(timezone.utc).isoformat()}
+
 @app.get("/api/v1/health")
 def health_check():
     return {"status": "healthy", "service": "sentinel", "timestamp": datetime.now(timezone.utc).isoformat()}
