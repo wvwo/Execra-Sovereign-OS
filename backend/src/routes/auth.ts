@@ -47,7 +47,8 @@ router.post('/register', async (req, res) => {
     });
 
     res.status(201).json({ message: 'Account created', user });
-  } catch {
+  } catch (err) {
+    console.error('[Auth] Registration error:', (err as Error).message, (err as Error).stack?.split('\n')[1]);
     res.status(500).json({ error: 'Registration failed' });
   }
 });
@@ -79,7 +80,8 @@ router.post('/login', async (req, res) => {
       token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
     });
-  } catch {
+  } catch (err) {
+    console.error('[Auth] Login error:', (err as Error).message, (err as Error).stack?.split('\n')[1]);
     res.status(500).json({ error: 'Login failed' });
   }
 });
