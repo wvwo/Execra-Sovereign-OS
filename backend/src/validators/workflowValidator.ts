@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const stepSchema = z.object({
   step_id: z.number().min(1),
-  action: z.enum(['navigate', 'click', 'type', 'extract', 'press', 'wait', 'scroll', 'hover']),
+  action: z.enum(['navigate', 'click', 'type', 'extract', 'press', 'wait', 'scroll', 'hover', 'webhook', 'branch']),
   target: z.object({
     strategy: z.enum(['text_content', 'css_selector', 'xpath', 'role', 'placeholder', 'test_id', 'aria_label']),
     value: z.string().min(1),

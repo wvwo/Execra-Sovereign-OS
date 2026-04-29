@@ -15,13 +15,14 @@ model User {
   avatar        String?
   passwordHash  String?
   googleId      String?    @unique
-  role          String     @default("user") // user | admin | security_officer | auditor
+  role          String     @default("user")
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   workflows     Workflow[]
   sessions      Session[]
+  notifications Notification[]
+  globalVars    GlobalVariable[]
 }
-
 
 model Session {
   id            String     @id @default(uuid())
@@ -41,15 +42,24 @@ model Workflow {
   userId        String
   user          User       @relation(fields: [userId], references: [id])
   title         String
+  description   String?
   startUrl      String
-  status        String     @default("draft") // draft | active | archived | failed
-  steps         Json       // Stored as JSON array
-  variables     Json?      // Extracted variables
+  status        String     @default("draft")
+  steps         Json
+  variables     Json?
+  tags          String[]   @default([])
   sessionId     String     @unique
-  metadata      Json?      // {frames_analyzed, tokens_used, cost_usd}
+  metadata      Json?
+  isTemplate    Boolean    @default(false)
+  schedule      Json?
+  runCount      Int        @default(0)
+  successRate   Float      @default(0)
+  avgDurationMs Int        @default(0)
+  thumbnail     String?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   executions    Execution[]
+  triggers      Trigger[]
 
   @@index([userId])
   @@index([status])
@@ -57,19 +67,133 @@ model Workflow {
 }
 
 model Execution {
-  id            String     @id @default(uuid())
-  workflowId    String
-  workflow      Workflow   @relation(fields: [workflowId], references: [id])
-  status        String     @default("pending") // pending | running | success | partial | failure
-  startedAt     DateTime?
-  completedAt   DateTime?
-  errorLog      Json?
-  screenshots   String[]   // Array of paths/URLs
-  result        Json?
-  createdAt     DateTime   @default(now())
+  id                  String     @id @default(uuid())
+  workflowId          String
+  workflow            Workflow   @relation(fields: [workflowId], references: [id])
+  status              String     @default("queued")
+  startedAt           DateTime?
+  endedAt             DateTime?
+  durationMs          Int?
+  stepsCompleted      Int        @default(0)
+  stepsTotal          Int        @default(0)
+  error               String?
+  extractedVariables  Json?
+  log                 Json?
+  screenshots         String[]
+  result              Json?
+  createdAt           DateTime   @default(now())
+  extractedVars       ExtractedVariable[]
 
   @@index([workflowId])
   @@index([status])
   @@index([createdAt])
 }
 
+model Template {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    String
+  icon        String
+  workflow    Json
+  useCount    Int      @default(0)
+  isOfficial  Boolean  @default(true)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+}
+
+model GlobalVariable {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  value       String
+  isSecret    Boolean  @default(false)
+  description String?
+  environment String   @default("all")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+// ── v8 Evolution Models ────────────────────────────────────────────────────
+
+enum TriggerType {
+  MANUAL
+  SCHEDULE
+  WEBHOOK
+  EMAIL
+  FILE_WATCH
+}
+
+model Trigger {
+  id         String      @id @default(uuid())
+  workflowId String
+  workflow   Workflow    @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  type       TriggerType
+  config     Json
+  isActive   Boolean     @default(true)
+  lastFired  DateTime?
+  fireCount  Int         @default(0)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([workflowId])
+  @@index([type, isActive])
+}
+
+model WorkflowChain {
+  id               String   @id @default(uuid())
+  sourceWorkflowId String
+  targetWorkflowId String
+  variableMapping  Json
+  createdAt        DateTime @default(now())
+
+  @@index([sourceWorkflowId])
+  @@index([targetWorkflowId])
+}
+
+model ExtractedVariable {
+  id          String    @id @default(uuid())
+  executionId String
+  execution   Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  name        String
+  value       String
+  type        String
+  isRedacted  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([executionId])
+}
+
+model PiiRedactionLog {
+  id             String   @id @default(uuid())
+  workflowId     String?
+  executionId    String?
+  redactionCount Int      @default(0)
+  types          String[]
+  originalHash   String
+  createdAt      DateTime @default(now())
+
+  @@index([workflowId])
+  @@index([createdAt])
+}

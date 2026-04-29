@@ -2,168 +2,136 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import http from 'http';
+import swaggerUi from 'swagger-ui-express';
+
+import authRoutes from './routes/auth';
 import workflowRoutes from './routes/workflows';
 import executionRoutes from './routes/execution';
-import { apiLimiter } from './middleware/rateLimit';
-import { errorHandler } from './middleware/errorHandler';
-import http from 'http';
-import { setupWebSocket } from './services/websocket';
-// metricsMiddleware / metricsEndpoint disabled for cloud deployments (prom-client not compatible with serverless)
-import cookieParser from 'cookie-parser';
+import templateRoutes from './routes/templates';
+import analyticsRoutes from './routes/analytics';
+import variableRoutes from './routes/variables';
+import notificationRoutes from './routes/notifications';
+import aiAssistRoutes from './routes/aiAssist';
+import triggerRoutes from './routes/triggers';
+import privacyShieldRoutes from './routes/privacyShield';
 import legacyRoutes from './legacyRoutes';
-import swaggerUi from 'swagger-ui-express';
+
+import { apiLimiter } from './middleware/rateLimit';
+import {
+  authLimiter,
+  uploadLimiter,
+  analysisLimiter,
+  executionLimiter,
+} from './middleware/rateLimiter';
+import { errorHandler } from './middleware/errorHandler';
+import { setupWebSocket } from './services/websocket';
 import { swaggerSpec } from './swagger';
 
 const app = express();
 const server = http.createServer(app);
 
-// Trust Railway's reverse proxy (needed for express-rate-limit & correct IP detection)
+// Trust Railway's reverse proxy
 app.set('trust proxy', 1);
 
-app.use(helmet());
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'https://process-autopilot.vercel.app',
-    /^https:\/\/.*\.vercel\.app$/,
-  ],
-  credentials: true,
-}));
+// ── Security headers (Phase 9) ─────────────────────────────────────────────
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'none'"],
+        frameSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true,
+    },
+    frameguard: { action: 'deny' },
+    noSniff: true,
+    xssFilter: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    permittedCrossDomainPolicies: false,
+  })
+);
+
+// Permissions-Policy header (helmet doesn't set this)
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  next();
+});
+
+app.use(
+  cors({
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'https://process-autopilot.vercel.app',
+      /^https:\/\/.*\.vercel\.app$/,
+    ],
+    credentials: true,
+  })
+);
 
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
+
+// General fallback limiter (all routes)
 app.use(apiLimiter);
 
-// Routes
-import authRoutes from './routes/auth';
-
-// Root health/status route (must be before legacyRoutes catch-all)
+// ── Routes with per-route rate limits ────────────────────────────────────
 app.get('/', (_req, res) => res.json({ status: 'Execra API v7', health: '/health' }));
+app.get('/health', (_req, res) =>
+  res.json({ status: 'healthy', service: 'backend-api', timestamp: new Date().toISOString() })
+);
 
-app.use('/api/v1/auth', authRoutes);
+// Auth: strict 5/15min brute-force protection
+app.use('/api/v1/auth', authLimiter, authRoutes);
+
+// Workflows: upload limited to 10/hr
 app.use('/api/v1/workflows', workflowRoutes);
-app.use('/api/v1/execute', executionRoutes);
-app.use('/', legacyRoutes);
 
+// Execution: 100/day limit
+app.use('/api/v1/execute', executionLimiter, executionRoutes);
+
+// AI assist: 20/hr
+app.use('/api/v1/ai-assist', analysisLimiter, aiAssistRoutes);
+
+// Upload endpoint within workflows also needs upload limit — applied in router
+app.use('/api/v1/templates', templateRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/variables', variableRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/triggers', triggerRoutes);
+app.use('/api/v1/privacy', privacyShieldRoutes);
+
+app.use('/', legacyRoutes);
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
-
-
-/**
- * @swagger
- * /health:
- *   get:
- *     tags: [System]
- *     summary: System health check
- *     responses:
- *       200:
- *         description: Healthy
- */
-app.get('/health', (_req, res) => {
-  res.json({ status: 'healthy', service: 'backend-api', timestamp: new Date().toISOString() });
-});
-
-// /metrics endpoint disabled — use Docker/Prometheus scraping in self-hosted environments only
+app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
 
 app.use(errorHandler);
 
 const io = setupWebSocket(server);
 
 const PORT = process.env.PORT || 4000;
-server.setTimeout(30000); // 30 seconds timeout against Slowloris attacks
+server.setTimeout(30000);
 server.keepAliveTimeout = 30000;
-server.headersTimeout = 31000; // Must be > keepAliveTimeout
+server.headersTimeout = 31000;
 server.listen(PORT, () => {
   console.log(`Backend API + WebSocket listening on port ${PORT}`);
 });
-
-/**
- * @swagger
- * /api/auth/login:
- *   post:
- *     tags: [Auth]
- *     summary: Login user
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Success - returns JWT token
- *       401:
- *         description: Invalid credentials
- * 
- * /api/auth/register:
- *   post:
- *     tags: [Auth]
- *     summary: Register a new user
- *     responses:
- *       200:
- *         description: Success
- * 
- * /api/workflows:
- *   get:
- *     tags: [Workflows]
- *     summary: Get all workflows
- *     responses:
- *       200:
- *         description: Success
- *   post:
- *     tags: [Workflows]
- *     summary: Create a new workflow
- *     responses:
- *       201:
- *         description: Created
- * 
- * /api/workflows/{id}:
- *   put:
- *     tags: [Workflows]
- *     summary: Update a workflow
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Updated
- *   delete:
- *     tags: [Workflows]
- *     summary: Delete a workflow
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Deleted
- * 
- * /api/workflows/{id}/execute:
- *   post:
- *     tags: [Workflows]
- *     summary: Execute a workflow
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Execution started
- */

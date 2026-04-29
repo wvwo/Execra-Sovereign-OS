@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Execra CI/CD Pipeline v8
 
 on:
   push:
@@ -9,21 +9,17 @@ on:
       - '**'
 
 jobs:
-  typecheck-and-audit:
-    name: Typecheck and Security Audit
+  security-scan:
+    name: Security Scan
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-
 
       - name: Install Root Dependencies
         run: npm ci || npm install
@@ -35,47 +31,138 @@ jobs:
         working-directory: ./backend
         run: npm ci || npm install
 
-      - name: Typecheck (Backend)
+      - name: Security Audit (Backend — high+)
         working-directory: ./backend
-        run: npx tsc --noEmit
-
-      - name: Security Audit (Backend)
-        working-directory: ./backend
-        run: npm audit --audit-level=critical
+        run: npm audit --audit-level=high
 
       - name: Install Frontend Dependencies
         working-directory: ./frontend
         run: npm ci || npm install
 
-      - name: Typecheck (Frontend)
+      - name: Security Audit (Frontend — high+)
+        working-directory: ./frontend
+        run: npm audit --audit-level=high
+
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      JWT_SECRET: test-super-secret-key-at-least-32-chars-for-ci
+      DATABASE_URL: postgresql://postgres:test@localhost:5432/execra_test
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: execra_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Dependencies
+        working-directory: ./backend
+        run: npm ci || npm install
+      - name: Generate Prisma Client
+        working-directory: ./backend
+        run: npx prisma generate
+      - name: TypeScript Check
+        working-directory: ./backend
+        run: npx tsc --noEmit
+      - name: Run Tests with Coverage
+        working-directory: ./backend
+        run: npx jest --forceExit --coverage --coverageReporters=text-summary
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./backend/coverage
+          flags: backend
+        continue-on-error: true
+
+  typecheck-frontend:
+    name: Frontend Typecheck & Build
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci || npm install
+      - name: TypeScript Check
         working-directory: ./frontend
         run: npx tsc --noEmit
-
-      - name: Security Audit (Frontend)
+      - name: Build
         working-directory: ./frontend
-        run: npm audit --audit-level=critical
+        run: npm run build
 
   build-docker:
     name: Build Docker Images
-    needs: typecheck-and-audit
-    # Runs when merged (pushed) to main
+    needs: [security-scan, test-backend, typecheck-frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Build Backend Docker Image
-        run: docker build -t execra-backend ./backend
-
+        run: docker build -t execra-backend:${{ github.sha }} ./backend
       - name: Build Frontend Docker Image
-        run: docker build -t execra-frontend ./frontend
+        run: docker build -t execra-frontend:${{ github.sha }} ./frontend
+
+  deploy-vercel:
+    name: Deploy Frontend (Vercel)
+    needs: [build-docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./frontend
+        continue-on-error: true
+
+  deploy-railway:
+    name: Deploy Backend (Railway)
+    needs: [build-docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      - name: Deploy Backend
+        working-directory: ./backend
+        run: railway up --service execra-backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        continue-on-error: true
 
   load-test:
+    name: Load Test (Smoke)
     runs-on: ubuntu-latest
-    needs: [typecheck-and-audit]
+    needs: [test-backend]
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     if: github.ref == 'refs/heads/main' && vars.STAGING_URL != ''
@@ -88,7 +175,7 @@ jobs:
           tar -xzf k6.tar.gz
           sudo mv k6-v0.55.0-linux-amd64/k6 /usr/local/bin/k6
           k6 version
-      - name: Run smoke test
+      - name: Run Smoke Test
         env:
           BASE_URL: ${{ vars.STAGING_URL }}
           TEST_EMAIL: ${{ secrets.TEST_EMAIL }}

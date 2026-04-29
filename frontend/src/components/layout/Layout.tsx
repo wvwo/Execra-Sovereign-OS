@@ -1,24 +1,55 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  PlusCircle, 
-  Settings, 
-  History, 
-  LogOut, 
-  Shield, 
-  Zap, 
-  Menu,
-  X,
-  User,
-  Bell
+import {
+  LayoutDashboard, PlusCircle, Settings, History,
+  LogOut, Shield, Zap, Menu, X, Bell, BarChart2,
+  BookTemplate, Variable, Clock, ChevronDown, Radio, EyeOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '../../services/api';
+import { Notification } from '../../types';
+
+const navItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: PlusCircle, label: 'New Workflow', path: '/upload' },
+  { icon: BarChart2, label: 'Analytics', path: '/analytics' },
+  { icon: BookTemplate, label: 'Templates', path: '/templates' },
+  { icon: Variable, label: 'Variables', path: '/variables' },
+  { icon: Clock, label: 'Scheduler', path: '/schedule' },
+  { icon: History, label: 'Audit Logs', path: '/audit' },
+  { icon: Radio, label: 'Live Capture', path: '/live-capture' },
+  { icon: Zap, label: 'Triggers', path: '/triggers' },
+  { icon: EyeOff, label: 'Privacy Shield', path: '/privacy-shield' },
+  { icon: Settings, label: 'Settings', path: '/settings' },
+];
 
 export const Layout: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get('/notifications');
+      setNotifications(res.data.notifications || []);
+      setUnreadCount(res.data.unreadCount || 0);
+    } catch { /* silent — notifications are non-critical */ }
+  };
+
+  const markAllRead = async () => {
+    await api.patch('/notifications/read-all').catch(() => {});
+    setUnreadCount(0);
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -26,64 +57,64 @@ export const Layout: React.FC = () => {
     navigate('/login');
   };
 
-  const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: PlusCircle, label: 'Create Workflow', path: '/upload' },
-    { icon: History, label: 'Audit Logs', path: '/audit' },
-    { icon: Settings, label: 'Settings', path: '/settings' },
-  ];
+  const NOTIF_ICONS: Record<string, string> = {
+    success: '✅', error: '❌', info: '💡', milestone: '🎉', schedule: '🕐',
+  };
 
   return (
     <div className="flex h-screen bg-[#0B0F14] text-slate-300 overflow-hidden font-sans">
       {/* Sidebar */}
       <AnimatePresence mode="wait">
         {isSidebarOpen && (
-          <motion.aside 
+          <motion.aside
             initial={{ x: -280 }}
             animate={{ x: 0 }}
             exit={{ x: -280 }}
-            className="w-72 bg-slate-900/50 border-r border-white/5 flex flex-col z-50 backdrop-blur-xl"
+            className="w-64 bg-slate-900/50 border-r border-white/5 flex flex-col z-50 backdrop-blur-xl shrink-0"
           >
-            <div className="p-8 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                <Shield className="w-6 h-6 text-white" />
+            {/* Logo */}
+            <div className="p-6 flex items-center gap-3 border-b border-white/5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                <Shield className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-black text-white tracking-tight">Execra OS</span>
+              <div>
+                <span className="text-base font-black text-white tracking-tight">Process</span>
+                <span className="text-base font-black text-purple-400"> Autopilot</span>
+              </div>
             </div>
 
-            <nav className="flex-1 px-4 space-y-2">
+            {/* Nav */}
+            <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
               {navItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) => `
-                    flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold transition-all
-                    ${isActive 
-                      ? 'bg-purple-600/10 text-purple-400 border border-purple-500/20 shadow-[0_0_20px_rgba(168,85,247,0.1)]' 
+                    flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold transition-all text-sm
+                    ${isActive
+                      ? 'bg-purple-600/10 text-purple-400 border border-purple-500/20'
                       : 'text-slate-500 hover:bg-white/5 hover:text-slate-300'
                     }
                   `}
                 >
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className="w-4 h-4 shrink-0" />
                   {item.label}
                 </NavLink>
               ))}
             </nav>
 
-            <div className="p-6 border-t border-white/5">
-              <div className="bg-slate-800/40 rounded-2xl p-4 flex items-center gap-4 border border-white/5">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white uppercase">
+            {/* User */}
+            <div className="p-4 border-t border-white/5">
+              <div className="bg-slate-800/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white uppercase text-xs shrink-0">
                   {user.name?.charAt(0) || 'U'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-white truncate">{user.name || 'Sovereign User'}</p>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Level 7 Agent</p>
+                  <p className="text-xs font-bold text-white truncate">{user.name || 'User'}</p>
+                  <p className="text-[10px] text-slate-500 truncate">{user.email || ''}</p>
                 </div>
-                <button 
-                  onClick={handleLogout}
-                  className="p-2 text-slate-500 hover:text-red-400 transition-colors"
-                >
-                  <LogOut className="w-5 h-5" />
+                <button onClick={handleLogout} className="p-1.5 text-slate-500 hover:text-red-400 transition-colors">
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -91,39 +122,98 @@ export const Layout: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 relative">
-        {/* Header */}
-        <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-slate-900/20 backdrop-blur-md sticky top-0 z-40">
-          <div className="flex items-center gap-4">
-            <button 
+      {/* Main */}
+      <main className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
+        {/* Top bar */}
+        <header className="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-slate-900/20 backdrop-blur-md sticky top-0 z-40 shrink-0">
+          <div className="flex items-center gap-3">
+            <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 hover:bg-white/5 rounded-lg text-slate-400"
             >
-              {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isSidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
-            <div className="h-6 w-px bg-white/10 mx-2" />
-            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">
-              <Zap className="w-4 h-4 inline-block mr-2 text-yellow-500 animate-pulse" />
-              Sovereign Environment Active
-            </h2>
+            <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-slate-600 uppercase tracking-widest">
+              <Zap className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />
+              Sovereign Environment
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="relative p-2 text-slate-400 hover:text-white transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-purple-500 rounded-full border-2 border-[#0B0F14]" />
-            </button>
-            <div className="h-6 w-px bg-white/10 mx-2" />
-            <div className="flex items-center gap-3 bg-slate-800/50 px-4 py-2 rounded-xl border border-white/5">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Local Link Stable</span>
+          <div className="flex items-center gap-3">
+            {/* Notifications bell */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 text-slate-400 hover:text-white transition-colors"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-purple-500 rounded-full text-[9px] font-black text-white flex items-center justify-center border-2 border-[#0B0F14]">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              <AnimatePresence>
+                {showNotifications && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    className="absolute right-0 top-full mt-2 w-80 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/50 z-50 overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between p-4 border-b border-white/5">
+                      <p className="text-sm font-black text-white">Notifications</p>
+                      {unreadCount > 0 && (
+                        <button onClick={markAllRead} className="text-xs text-purple-400 hover:text-purple-300 font-bold">
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <p className="text-slate-600 text-sm text-center py-8">No notifications yet.</p>
+                      ) : (
+                        notifications.map(n => (
+                          <div
+                            key={n.id}
+                            className={`p-4 border-b border-white/5 flex gap-3 ${!n.isRead ? 'bg-purple-500/5' : ''}`}
+                          >
+                            <span className="text-base shrink-0">{NOTIF_ICONS[n.type] || '📋'}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-white">{n.title}</p>
+                              <p className="text-xs text-slate-500 mt-0.5">{n.message}</p>
+                              <p className="text-[10px] text-slate-700 mt-1">
+                                {new Date(n.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                            {!n.isRead && (
+                              <div className="w-2 h-2 rounded-full bg-purple-500 shrink-0 mt-1.5" />
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="h-5 w-px bg-white/10" />
+            <div className="hidden sm:flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-xl border border-white/5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Online</span>
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-8 relative">
+        {/* Click outside to close notifications */}
+        {showNotifications && (
+          <div className="fixed inset-0 z-30" onClick={() => setShowNotifications(false)} />
+        )}
+
+        {/* Page content */}
+        <div className="flex-1 overflow-y-auto p-8">
           <Outlet />
         </div>
       </main>
