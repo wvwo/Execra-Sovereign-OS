@@ -19,7 +19,7 @@ const navItems = [
   { icon: History, label: 'Audit Logs', path: '/audit' },
   { icon: Radio, label: 'Live Capture', path: '/live-capture' },
   { icon: Zap, label: 'Triggers', path: '/triggers' },
-  { icon: EyeOff, label: 'Privacy Shield', path: '/privacy-shield' },
+  { icon: EyeOff, label: 'Privacy Shield', path: '/privacy' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 

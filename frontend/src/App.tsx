@@ -50,7 +50,7 @@ function App() {
             <Route path="/audit" element={<AuditPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/live-capture" element={<LiveCapturePage />} />
-            <Route path="/privacy-shield" element={<PrivacyShieldPage />} />
+            <Route path="/privacy" element={<PrivacyShieldPage />} />
             <Route path="/triggers" element={<TriggerManagerPage />} />
           </Route>
 
