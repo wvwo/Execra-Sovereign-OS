@@ -194,7 +194,7 @@ export const LandingPage: React.FC = () => {
                 <tr className="border-b border-white/10">
                   <th className="text-left p-4 text-sm font-bold text-slate-500">Feature / الميزة</th>
                   <th className="p-4 text-center">
-                    <span className="text-sm font-black text-purple-400">Process Autopilot</span>
+                    <span className="text-sm font-black text-purple-400">Execra</span>
                   </th>
                   <th className="p-4 text-center text-sm font-bold text-slate-600">Bardeen</th>
                   <th className="p-4 text-center text-sm font-bold text-slate-600">Zapier</th>
@@ -299,7 +299,7 @@ export const LandingPage: React.FC = () => {
       <footer className="py-10 px-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-600">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4" />
-          <span>Process Autopilot © 2026</span>
+          <span>Execra © 2026</span>
         </div>
         <div className="flex items-center gap-1 text-slate-700" dir="rtl">
           <Globe className="w-4 h-4" />

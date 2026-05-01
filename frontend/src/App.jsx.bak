@@ -192,7 +192,7 @@ function App() {
       } else if (type === 'google') {
           newSteps = [
               { action: 'navigate', url: 'https://www.google.com' },
-              { action: 'type', selector: 'textarea[name="q"], input[name="q"]', value: 'Process Autopilot MVP' },
+              { action: 'type', selector: 'textarea[name="q"], input[name="q"]', value: 'Execra MVP' },
               { action: 'click', selector: 'input[name="btnK"], button[name="btnK"], input[aria-label="Google Search"]' }
           ];
       } else if (type === 'email') {
