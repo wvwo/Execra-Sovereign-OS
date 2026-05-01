@@ -78,8 +78,7 @@ export const Layout: React.FC = () => {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <div>
-                <span className="text-base font-black text-white tracking-tight">Process</span>
-                <span className="text-base font-black text-purple-400"> Autopilot</span>
+                <span className="text-base font-black text-purple-400 tracking-tight">Execra</span>
               </div>
             </div>
 

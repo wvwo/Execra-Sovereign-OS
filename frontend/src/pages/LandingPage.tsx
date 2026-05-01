@@ -59,7 +59,7 @@ export const LandingPage: React.FC = () => {
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
             <Shield className="w-4 h-4 text-white" />
           </div>
-          <span className="font-black text-white">Process <span className="text-purple-400">Autopilot</span></span>
+          <span className="font-black text-purple-400">Execra</span>
         </div>
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/login')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">
