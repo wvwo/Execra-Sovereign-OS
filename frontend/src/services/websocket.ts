@@ -1,7 +1,12 @@
 import { io, Socket } from 'socket.io-client';
 import { useEffect, useState, useCallback } from 'react';
 
-const SOCKET_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4000';
+// Derive WebSocket URL from VITE_API_URL (strip /api/v1 suffix) so a single
+// env var covers both REST and WebSocket — VITE_WS_URL still overrides if set.
+const _apiBase = import.meta.env.VITE_API_URL as string | undefined;
+const SOCKET_URL =
+  import.meta.env.VITE_WS_URL ||
+  (_apiBase ? _apiBase.replace(/\/api\/v1\/?$/, '') : 'http://localhost:4000');
 
 class WebSocketService {
   private socket: Socket | null = null;
@@ -79,8 +84,7 @@ export function useExecutionSocket(executionId: string) {
   const [captchaDetected, setCaptchaDetected] = useState(false);
 
   useEffect(() => {
-    // In real app, extract token from cookie or context if needed
-    const token = "dummy-token-for-now";
+    const token = localStorage.getItem('token') || undefined;
     wsService.connect(token);
     wsService.subscribeExecution(executionId);
 

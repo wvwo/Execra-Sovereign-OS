@@ -16,6 +16,7 @@ import notificationRoutes from './routes/notifications';
 import aiAssistRoutes from './routes/aiAssist';
 import triggerRoutes from './routes/triggers';
 import privacyShieldRoutes from './routes/privacyShield';
+import auditRoutes from './routes/audit';
 import legacyRoutes from './legacyRoutes';
 
 import { apiLimiter } from './middleware/rateLimit';
@@ -118,12 +119,16 @@ app.use('/api/v1/variables', variableRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/triggers', triggerRoutes);
 app.use('/api/v1/privacy', privacyShieldRoutes);
+app.use('/api/v1/audit', auditRoutes);
 
 app.use('/', legacyRoutes);
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
+
+// 404 handler — must be after all routes
+app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
 app.use(errorHandler);
 

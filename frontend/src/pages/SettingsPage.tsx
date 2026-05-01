@@ -54,7 +54,7 @@ const inputCls =
 export const SettingsPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [apiUrl, setApiUrl] = useState('http://localhost:4000');
+  const [apiUrl, setApiUrl] = useState(import.meta.env.VITE_API_URL || 'http://localhost:4000');
   const [openaiKey, setOpenaiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [notifications, setNotifications] = useState(true);
