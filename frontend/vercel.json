@@ -16,8 +16,6 @@
       ]
     }
   ],
-  "env": {
-    "VITE_API_URL": "@execra-api-url",
-    "VITE_WS_URL": "@execra-ws-url"
-  }
+  "env": {}
+
 }
