@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { Template } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Search, Download, Eye, Star, Grid3x3,
   ChevronRight, X, Play, CheckCircle2, MoreVertical,
@@ -106,6 +107,7 @@ const OptionsMenu: React.FC<OptionsMenuProps> = ({ template, onEdit, onRun, onCo
 };
 
 export const TemplatesPage: React.FC = () => {
+  const { i18n } = useTranslation();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [filtered, setFiltered] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -185,7 +187,10 @@ export const TemplatesPage: React.FC = () => {
   };
 
   const formatDate = (date: Date) =>
-    date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    date.toLocaleDateString(
+      i18n.language === 'ar' ? 'ar-SA' : 'en-US',
+      { year: 'numeric', month: 'short', day: 'numeric' }
+    );
 
   const myTemplates = filtered.filter(t => imported.has(t.id));
 
@@ -329,10 +334,9 @@ export const TemplatesPage: React.FC = () => {
                 return (
                   <motion.div
                     key={template.id}
-                    layout
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-slate-900/40 border border-white/5 rounded-2xl p-6 hover:border-purple-500/30 transition-all group"
+                    className="bg-slate-900/40 border border-white/5 rounded-2xl p-6 hover:border-purple-500/30 transition-all group relative"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="text-3xl">{template.icon}</div>
