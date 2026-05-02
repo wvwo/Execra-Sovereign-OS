@@ -1,10 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
   Video, Brain, Zap, Shield, Globe, ArrowRight,
-  Check, Star, ChevronRight, Play, X
+  Check, Star, ChevronRight, Play, X, Sun, Moon
 } from 'lucide-react';
 
 const FadeIn: React.FC<{ children: React.ReactNode; delay?: number; className?: string }> = ({
@@ -57,12 +57,30 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [showDemo, setShowDemo] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const isRTL = i18n.language === 'ar';
+
+  // Apply saved theme on mount (no flash)
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') || 'dark';
+    const dark = saved === 'dark';
+    setIsDark(dark);
+    document.documentElement.classList.toggle('dark', dark);
+  }, []);
+
+  const toggleTheme = () => {
+    const dark = document.documentElement.classList.contains('dark');
+    document.documentElement.classList.toggle('dark', !dark);
+    localStorage.setItem('theme', dark ? 'light' : 'dark');
+    setIsDark(!dark);
+  };
 
   const toggleLanguage = () => {
     const next = isRTL ? 'en' : 'ar';
     i18n.changeLanguage(next);
+    localStorage.setItem('language', next);
     document.documentElement.dir = next === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = next;
   };
 
   return (
@@ -116,6 +134,13 @@ export const LandingPage: React.FC = () => {
           >
             <Globe className="w-4 h-4" />
             <span className="text-xs font-bold">{isRTL ? 'EN' : 'AR'}</span>
+          </button>
+          <button
+            onClick={toggleTheme}
+            className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           <button onClick={() => navigate('/login')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">
             {t('nav.sign_in')}
