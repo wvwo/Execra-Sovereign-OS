@@ -3,33 +3,52 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, PlusCircle, Settings, History,
   LogOut, Shield, Zap, Menu, X, Bell, BarChart2,
-  BookTemplate, Variable, Clock, ChevronDown, Radio, EyeOff
+  BookTemplate, Variable, Clock, ChevronDown, Radio, EyeOff,
+  Globe, Sun, Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { api } from '../../services/api';
 import { Notification } from '../../types';
 
-const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: PlusCircle, label: 'New Workflow', path: '/upload' },
-  { icon: BarChart2, label: 'Analytics', path: '/analytics' },
-  { icon: BookTemplate, label: 'Templates', path: '/templates' },
-  { icon: Variable, label: 'Variables', path: '/variables' },
-  { icon: Clock, label: 'Scheduler', path: '/schedule' },
-  { icon: History, label: 'Audit Logs', path: '/audit' },
-  { icon: Radio, label: 'Live Capture', path: '/live-capture' },
-  { icon: Zap, label: 'Triggers', path: '/triggers' },
-  { icon: EyeOff, label: 'Privacy Shield', path: '/privacy' },
-  { icon: Settings, label: 'Settings', path: '/settings' },
+const NAV_KEYS = [
+  { icon: LayoutDashboard, key: 'nav.dashboard', path: '/dashboard' },
+  { icon: PlusCircle, key: 'nav.new_workflow', path: '/upload' },
+  { icon: BarChart2, key: 'nav.analytics', path: '/analytics' },
+  { icon: BookTemplate, key: 'nav.templates', path: '/templates' },
+  { icon: Variable, key: 'nav.variables', path: '/variables' },
+  { icon: Clock, key: 'nav.scheduler', path: '/schedule' },
+  { icon: History, key: 'nav.audit_logs', path: '/audit' },
+  { icon: Radio, key: 'nav.live_capture', path: '/live-capture' },
+  { icon: Zap, key: 'nav.triggers', path: '/triggers' },
+  { icon: EyeOff, key: 'nav.privacy_shield', path: '/privacy' },
+  { icon: Settings, key: 'nav.settings', path: '/settings' },
 ];
 
 export const Layout: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') !== 'light');
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isRTL = i18n.language === 'ar';
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
+
+  useEffect(() => {
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+  }, [isRTL]);
+
+  const toggleLanguage = () => {
+    const next = isRTL ? 'en' : 'ar';
+    i18n.changeLanguage(next);
+  };
 
   useEffect(() => {
     fetchNotifications();
@@ -84,7 +103,7 @@ export const Layout: React.FC = () => {
 
             {/* Nav */}
             <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-              {navItems.map((item) => (
+              {NAV_KEYS.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
@@ -97,7 +116,7 @@ export const Layout: React.FC = () => {
                   `}
                 >
                   <item.icon className="w-4 h-4 shrink-0" />
-                  {item.label}
+                  {t(item.key)}
                 </NavLink>
               ))}
             </nav>
@@ -139,6 +158,25 @@ export const Layout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Language toggle */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+              title={isRTL ? 'Switch to English' : 'التبديل إلى العربية'}
+            >
+              <Globe className="w-4 h-4" />
+              <span className="text-xs font-bold">{isRTL ? 'EN' : 'AR'}</span>
+            </button>
+
+            {/* Theme toggle */}
+            <button
+              onClick={() => setIsDark(!isDark)}
+              className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
             {/* Notifications bell */}
             <div className="relative">
               <button

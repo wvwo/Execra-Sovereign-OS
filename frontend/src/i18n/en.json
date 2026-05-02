@@ -1,89 +1,107 @@
 {
-  "hero": {
-    "badge": "v3.0 Global Automation Engine",
-    "title_1": "Turn Intent Into",
-    "title_2": "Execution — Instantly",
-    "subtitle_pro": "Execra transforms your ideas into real automation workflows with zero setup. Upload your screen recording and watch the magic happen.",
-    "subtitle_simple": "Automate your daily tasks with one tap. No coding needed. Execra works for everyone.",
-    "run_demo": "Run Live Demo",
-    "try_templates": "Try Templates"
-  },
   "nav": {
-    "docs": "Docs",
-    "github": "GitHub",
-    "simple": "Simple",
-    "pro": "Pro",
-    "sovereign": "Data Status: Sovereign & Local",
-    "stealth": "Stealth Active",
-    "neural_xp": "Neural XP"
+    "dashboard": "Dashboard",
+    "new_workflow": "New Workflow",
+    "analytics": "Analytics",
+    "templates": "Templates",
+    "variables": "Variables",
+    "scheduler": "Scheduler",
+    "audit_logs": "Audit Logs",
+    "live_capture": "Live Capture",
+    "triggers": "Triggers",
+    "privacy_shield": "Privacy Shield",
+    "settings": "Settings",
+    "sign_in": "Sign In",
+    "get_started": "Get Started Free"
   },
-  "control_plane": {
-    "title": "1. Control Plane",
-    "subtitle": "Input intent via Chat, Video, or preset flows.",
-    "nlp_label": "Natural Language Builder",
-    "placeholder": "e.g. Nav to Amazon, check iPhone 15 price, open Twitter and tweet it...",
-    "generate": "Generate Automation",
-    "synthesizing": "Synthesizing Pipeline...",
-    "video_label": "Record & Train (Video)",
-    "extract": "Extract & Process",
-    "shadow_record": "Shadow Record (Native)",
-    "recording": "Recording DOM Events...",
-    "context_label": "Massive Context Layer",
-    "analyze": "Analyze Complexity",
-    "ingesting": "Ingesting Architecture...",
-    "teach_me": "Teach Me (Shadow Learning)",
-    "teaching": "Learning Your Actions..."
+  "buttons": {
+    "run": "Run",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "export": "Export",
+    "import": "Import",
+    "deploy_agent": "Deploy New Agent",
+    "watch_demo": "Watch Demo",
+    "start_free": "Get Started Free",
+    "use_template": "Use Template",
+    "preview": "Preview"
   },
-  "execution": {
-    "title": "2. Execution Engine",
-    "subtitle": "Visual AI-powered live execution & self-healing.",
-    "ready": "Ready to execute",
-    "run": "Run Workflow",
-    "download": "Download Script",
-    "schedule": "Schedule Cron Job"
+  "landing": {
+    "badge": "AI learns from your screen recording",
+    "title_1": "Record Once",
+    "title_2": "Automate Forever",
+    "subtitle": "Create browser automation from a video recording — without writing a single line of code",
+    "subtitle_en": "Record your screen once. Our AI watches, understands, and builds a replayable automation script.",
+    "stats_faster": "Faster setup vs competitors",
+    "stats_works": "Works on any website",
+    "stats_code": "Lines of code needed",
+    "how_it_works": "How It Works",
+    "how_simple": "Three simple steps to full automation",
+    "use_cases": "Use Cases",
+    "comparison_title": "vs Competitors",
+    "pricing_title": "Pricing",
+    "pricing_sub": "Start free, scale as you grow",
+    "cta_title": "Start automating in under 5 minutes",
+    "cta_sub": "No credit card. No setup. No code.",
+    "cta_btn": "Start Now — It's Free",
+    "footer_copy": "Execra © 2026",
+    "footer_arabic": "Arabic language fully supported"
   },
-  "marketplace": {
-    "title": "Execra Marketplace",
-    "subtitle": "Discover, purchase, and deploy community-built cross-app automation templates."
+  "dashboard": {
+    "title": "Dashboard",
+    "empty": "No workflows yet",
+    "empty_sub": "Create your first workflow to get started",
+    "total_runs": "Total Runs",
+    "success_rate": "Success Rate",
+    "active_workflows": "Active Workflows"
   },
-  "action_store": {
-    "title": "Action Store",
-    "subtitle": "Community-built one-tap automations. Install and use instantly.",
-    "install": "Install",
-    "publish": "Publish Your Action"
+  "auth": {
+    "login_title": "Sign In",
+    "register_title": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "name": "Full Name",
+    "submit_login": "Sign In",
+    "submit_register": "Create Account",
+    "no_account": "Don't have an account?",
+    "have_account": "Already have an account?",
+    "register_link": "Register",
+    "login_link": "Sign In",
+    "error_invalid": "Invalid email or password",
+    "error_exists": "Email already registered"
   },
-  "swarm": {
-    "title": "Commander Control Plane",
-    "subtitle": "Deploy parallel AI agents across different domains. Each agent operates independently and reports back to the Hive Mind.",
-    "engage": "Engage Hive Mind",
-    "deploying": "Deploying Swarm...",
-    "thinking": "Deep Thinking Active",
-    "cognitive": "Cognitive Cycles"
+  "templates": {
+    "title": "Template Library",
+    "subtitle": "Production-ready automation blueprints — import and run in seconds",
+    "search": "Search templates...",
+    "library_tab": "Library",
+    "my_tab": "My Templates",
+    "marketplace_tab": "Marketplace",
+    "no_templates": "No templates found",
+    "imported": "Imported",
+    "official": "Official",
+    "uses": "uses",
+    "steps": "steps",
+    "free_tier": "Free",
+    "pro_tier": "Pro",
+    "marketplace_tier": "Marketplace",
+    "upgrade_title": "Upgrade to Pro",
+    "upgrade_sub": "This template requires a Pro subscription.",
+    "upgrade_btn": "Upgrade Now"
   },
-  "nexus": {
-    "title": "Nexus Command Center",
-    "status": "Status: Cross-Platform Orchestration Active"
+  "audit": {
+    "title": "Sovereign Audit Vault",
+    "subtitle": "ISO 27001 Compliant Real-time Event Monitoring & Integrity Verification",
+    "export": "Export Logs",
+    "forensic": "Forensic View",
+    "forensic_title": "Forensic Log Detail",
+    "close": "Close"
   },
-  "life_action": {
-    "title": "Automate Your Life",
-    "subtitle": "Complex tasks made simple. Just tap and Execra handles everything for you.",
-    "badge": "Life-Action Engine — One-Tap Automation",
-    "one_tap": "One Tap"
-  },
-  "inclusivity": {
-    "humanity": "Serving All Humanity",
-    "accessible": "Voice-First Accessible",
-    "sovereign": "Sovereign & Secure"
-  },
-  "footer": {
-    "cta": "Start Automating Now",
-    "run_first": "Run Your First Workflow",
-    "switch_pro": "Switch to Pro Mode",
-    "tagline": "Built for every human. Sovereign, Accessible, Automated."
-  },
-  "theme": {
-    "dark": "Dark",
-    "light": "Light"
-  },
-  "global_status": "Languages Synchronized. Dark/Light Mode Primed. Action Store Open."
+  "scheduler": {
+    "title": "Scheduler",
+    "subtitle": "Automate your workflows on a recurring schedule",
+    "no_schedules": "No scheduled workflows yet."
+  }
 }

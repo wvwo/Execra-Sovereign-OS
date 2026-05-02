@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
   Video, Brain, Zap, Shield, Globe, ArrowRight,
   Check, Star, ChevronRight, Play, X
@@ -50,7 +51,15 @@ const PLANS = [
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [showDemo, setShowDemo] = useState(false);
+  const isRTL = i18n.language === 'ar';
+
+  const toggleLanguage = () => {
+    const next = isRTL ? 'en' : 'ar';
+    i18n.changeLanguage(next);
+    document.documentElement.dir = next === 'ar' ? 'rtl' : 'ltr';
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
@@ -95,15 +104,23 @@ export const LandingPage: React.FC = () => {
           </div>
           <span className="font-black text-purple-400">Execra</span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleLanguage}
+            className="flex items-center gap-1 p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+            title={isRTL ? 'Switch to English' : 'التبديل إلى العربية'}
+          >
+            <Globe className="w-4 h-4" />
+            <span className="text-xs font-bold">{isRTL ? 'EN' : 'AR'}</span>
+          </button>
           <button onClick={() => navigate('/login')} className="text-sm font-bold text-slate-400 hover:text-white transition-colors">
-            Sign In
+            {t('nav.sign_in')}
           </button>
           <button
             onClick={() => navigate('/register')}
             className="text-sm font-bold px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:shadow-lg hover:shadow-purple-600/20 transition-all"
           >
-            Get Started Free
+            {t('nav.get_started')}
           </button>
         </div>
       </nav>
