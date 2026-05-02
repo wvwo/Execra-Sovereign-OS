@@ -52,7 +52,7 @@ export const SchedulePage: React.FC = () => {
   }, []);
 
   const activeCron = frequency.cron === '' ? customCron : frequency.cron;
-  const scheduledWorkflows = workflows.filter(w => w.schedule?.enabled);
+  const scheduledWorkflows = (workflows || []).filter(w => w?.schedule?.enabled);
 
   const handleSave = async () => {
     if (!selectedWf || !activeCron) { setError('Please select a workflow and cron expression'); return; }
@@ -236,8 +236,8 @@ export const SchedulePage: React.FC = () => {
                   <div key={wf.id} className="flex items-center gap-4 p-3 bg-slate-800/40 rounded-xl">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">{wf.title || wf.workflow_title}</p>
-                      <code className="text-xs text-slate-500 font-mono">{wf.schedule?.cron}</code>
+                      <p className="text-sm font-bold text-white truncate">{wf.title || (wf as any).workflow_title || 'Unnamed Workflow'}</p>
+                      <code className="text-xs text-slate-500 font-mono">{wf.schedule?.cron || '—'}</code>
                     </div>
                     <button
                       onClick={() => handleToggle(wf)}
