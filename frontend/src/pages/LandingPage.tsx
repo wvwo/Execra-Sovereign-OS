@@ -1,9 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 import {
   Video, Brain, Zap, Shield, Globe, ArrowRight,
-  Check, Star, ChevronRight, Play
+  Check, Star, ChevronRight, Play, X
 } from 'lucide-react';
 
 const FadeIn: React.FC<{ children: React.ReactNode; delay?: number; className?: string }> = ({
@@ -50,9 +50,43 @@ const PLANS = [
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [showDemo, setShowDemo] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
+      {/* Demo Video Modal */}
+      <AnimatePresence>
+        {showDemo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+            onClick={() => setShowDemo(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="relative w-full max-w-4xl bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+            >
+              <button
+                onClick={() => setShowDemo(false)}
+                className="absolute top-3 right-3 z-10 p-2 bg-black/60 rounded-full text-white hover:bg-white/20 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <video
+                src="/demo.mp4"
+                controls
+                autoPlay
+                className="w-full aspect-video"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/5">
         <div className="flex items-center gap-2">
@@ -114,7 +148,10 @@ export const LandingPage: React.FC = () => {
               ابدأ مجاناً
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all">
+            <button
+              onClick={() => setShowDemo(true)}
+              className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all"
+            >
               <Play className="w-5 h-5" /> Watch Demo
             </button>
           </div>
