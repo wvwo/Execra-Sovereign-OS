@@ -3,21 +3,24 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { KpiCards } from '../components/audit/KpiCards';
 import { IntegrityVerifier } from '../components/audit/IntegrityVerifier';
-import { 
-  Shield, 
-  FileCheck, 
-  Activity, 
-  Search, 
-  Download, 
+import {
+  Shield,
+  FileCheck,
+  Activity,
+  Search,
+  Download,
   Filter,
   Lock,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const AuditPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  
+  const [forensicLog, setForensicLog] = useState<any | null>(null);
+  const [filterText, setFilterText] = useState('');
+
   const { data: logs, isLoading } = useQuery({
     queryKey: ['audit-logs'],
     queryFn: async () => {
@@ -31,6 +34,30 @@ export const AuditPage: React.FC = () => {
     return res.data;
   };
 
+  const handleExport = () => {
+    const exportData: any[] = Array.isArray(logs) ? logs : [];
+    const header = 'timestamp,event_type,action,severity,user_id';
+    const rows = exportData.map((l: any) =>
+      `"${l.timestamp || ''}","${l.event_type || ''}","${l.action || ''}","${l.severity || ''}","${l.userId || ''}"`
+    );
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-logs-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredLogs = Array.isArray(logs)
+    ? logs.filter((l: any) =>
+        !filterText ||
+        (l.event_type || '').toLowerCase().includes(filterText.toLowerCase()) ||
+        (l.action || '').toLowerCase().includes(filterText.toLowerCase())
+      )
+    : [];
+
   return (
     <div className="space-y-8 pb-12">
       {/* Header */}
@@ -40,10 +67,16 @@ export const AuditPage: React.FC = () => {
           <p className="text-slate-500 mt-1">ISO 27001 Compliant Real-time Event Monitoring & Integrity Verification</p>
         </div>
         <div className="flex gap-3">
-          <button className="bg-slate-900/40 border border-white/5 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white transition-all flex items-center gap-2 text-sm font-bold">
-            <Download className="w-4 h-4" /> Export logs
+          <button
+            onClick={handleExport}
+            className="bg-slate-900/40 border border-white/5 px-4 py-2.5 rounded-xl text-slate-400 hover:text-white transition-all flex items-center gap-2 text-sm font-bold"
+          >
+            <Download className="w-4 h-4" /> Export Logs
           </button>
-          <button className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-purple-600/20 text-sm flex items-center gap-2">
+          <button
+            onClick={() => filteredLogs.length > 0 && setForensicLog(filteredLogs[0])}
+            className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-purple-600/20 text-sm flex items-center gap-2"
+          >
             <Shield className="w-4 h-4" /> Forensic View
           </button>
         </div>
@@ -105,9 +138,11 @@ export const AuditPage: React.FC = () => {
             <div className="flex gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
-                <input 
-                  type="text" 
-                  placeholder="Filter events..." 
+                <input
+                  type="text"
+                  placeholder="Filter events..."
+                  value={filterText}
+                  onChange={e => setFilterText(e.target.value)}
                   className="bg-slate-950 border border-white/5 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
               </div>
@@ -135,31 +170,37 @@ export const AuditPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {(logs || []).map((log: any, i: number) => (
-                    <motion.tr 
-                      initial={{ opacity: 0 }} 
-                      animate={{ opacity: 1 }} 
+                  {filteredLogs.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center text-slate-600 text-sm">No events found.</td>
+                    </tr>
+                  )}
+                  {filteredLogs.map((log: any, i: number) => (
+                    <motion.tr
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       transition={{ delay: i * 0.02 }}
-                      key={i} 
-                      className="hover:bg-white/5 transition-colors group"
+                      key={i}
+                      onClick={() => setForensicLog(log)}
+                      className="hover:bg-white/5 transition-colors group cursor-pointer"
                     >
                       <td className="px-6 py-4 text-xs font-mono text-slate-500">
-                        {new Date(log.timestamp).toLocaleTimeString()}
+                        {log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : '—'}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-xs font-bold text-white uppercase">{log.event_type}</span>
+                        <span className="text-xs font-bold text-white uppercase">{log.event_type || '—'}</span>
                       </td>
                       <td className="px-6 py-4 text-xs text-slate-400">
-                        {log.action}
+                        {log.action || '—'}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`
                           text-[9px] font-black px-2 py-0.5 rounded border uppercase
-                          ${log.severity === 'CRITICAL' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 
+                          ${log.severity === 'CRITICAL' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                             log.severity === 'HIGH' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
                             'bg-blue-500/10 text-blue-400 border-blue-500/20'}
                         `}>
-                          {log.severity}
+                          {log.severity || 'INFO'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -175,6 +216,60 @@ export const AuditPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Forensic Detail Modal */}
+      <AnimatePresence>
+        {forensicLog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setForensicLog(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-slate-900 border border-white/10 rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-white">Forensic Log Detail</h2>
+                    <p className="text-xs text-slate-500">Full event record with chain metadata</p>
+                  </div>
+                </div>
+                <button onClick={() => setForensicLog(null)} className="p-2 text-slate-500 hover:text-white transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {Object.entries(forensicLog).map(([key, value]) => (
+                  <div key={key} className="flex gap-4 py-2 border-b border-white/5">
+                    <span className="text-xs font-black text-slate-500 uppercase tracking-widest w-32 shrink-0">{key}</span>
+                    <span className="text-xs text-slate-300 font-mono break-all">
+                      {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value ?? '—')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setForensicLog(null)}
+                className="mt-6 w-full py-3 rounded-xl bg-slate-800 border border-white/10 text-slate-400 font-bold hover:text-white transition-colors"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
