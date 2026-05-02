@@ -120,12 +120,15 @@ export const LandingPage: React.FC = () => {
       </AnimatePresence>
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="flex items-center gap-2">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
             <Shield className="w-4 h-4 text-white" />
           </div>
           <span className="font-black text-purple-400">Execra</span>
-        </div>
+        </button>
         <div className="flex items-center gap-3">
           <button
             onClick={toggleLanguage}

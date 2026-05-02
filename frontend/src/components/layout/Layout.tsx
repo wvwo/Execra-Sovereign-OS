@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard, PlusCircle, Settings, History,
   LogOut, Shield, Zap, Menu, X, Bell, BarChart2,
@@ -96,14 +96,12 @@ export const Layout: React.FC = () => {
             className="w-64 bg-slate-900/50 border-r border-white/5 flex flex-col z-50 backdrop-blur-xl shrink-0"
           >
             {/* Logo */}
-            <div className="p-6 flex items-center gap-3 border-b border-white/5">
+            <Link to="/" className="p-6 flex items-center gap-3 border-b border-white/5 hover:bg-white/5 transition-colors">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
                 <Shield className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <span className="text-base font-black text-purple-400 tracking-tight">Execra</span>
-              </div>
-            </div>
+              <span className="text-base font-black text-purple-400 tracking-tight">Execra</span>
+            </Link>
 
             {/* Nav */}
             <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
