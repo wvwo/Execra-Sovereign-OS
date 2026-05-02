@@ -35,12 +35,16 @@ const USE_CASES = [
 ];
 
 const COMPARISON = [
-  { feature: 'No-code setup', featureAr: 'إعداد بدون كود', autopilot: true, bardeen: 'partial', zapier: false, uipath: false },
-  { feature: 'Works without APIs', featureAr: 'يعمل بدون API', autopilot: true, bardeen: true, zapier: false, uipath: true },
-  { feature: 'Arabic language support', featureAr: 'دعم اللغة العربية', autopilot: true, bardeen: false, zapier: false, uipath: false },
-  { feature: 'Learn by recording', featureAr: 'تعلم بالتسجيل', autopilot: true, bardeen: false, zapier: false, uipath: false },
-  { feature: 'Self-healing automation', featureAr: 'أتمتة ذاتية الإصلاح', autopilot: true, bardeen: false, zapier: false, uipath: true },
-  { feature: 'AI step assistant', featureAr: 'مساعد AI', autopilot: true, bardeen: false, zapier: false, uipath: false },
+  { feature: 'No-code setup', featureAr: 'إعداد بدون كود', execra: true, zapier: true, make: true, uipath: false },
+  { feature: 'Screen recording input', featureAr: 'إدخال تسجيل الشاشة', execra: true, zapier: false, make: false, uipath: false },
+  { feature: 'AI workflow generation', featureAr: 'توليد مسار العمل بالذكاء الاصطناعي', execra: true, zapier: false, make: false, uipath: 'partial' },
+  { feature: 'Works without API', featureAr: 'يعمل بدون API', execra: true, zapier: false, make: false, uipath: true },
+  { feature: 'Local execution', featureAr: 'تنفيذ محلي', execra: true, zapier: false, make: false, uipath: true },
+  { feature: 'PII Redaction (PDPL)', featureAr: 'إخفاء البيانات الشخصية', execra: true, zapier: false, make: false, uipath: 'partial' },
+  { feature: 'Multi-agent AI', featureAr: 'ذكاء اصطناعي متعدد الوكلاء', execra: true, zapier: false, make: false, uipath: 'partial' },
+  { feature: 'Free tier', featureAr: 'مستوى مجاني', execra: true, zapier: 'partial', make: 'partial', uipath: false },
+  { feature: 'Saudi compliance', featureAr: 'الامتثال السعودي', execra: true, zapier: false, make: false, uipath: 'partial' },
+  { feature: 'Self-healing workflows', featureAr: 'مسارات ذاتية الإصلاح', execra: true, zapier: false, make: false, uipath: 'partial' },
 ];
 
 const PLANS = [
@@ -248,10 +252,10 @@ export const LandingPage: React.FC = () => {
                 <tr className="border-b border-white/10">
                   <th className="text-left p-4 text-sm font-bold text-slate-500">Feature / الميزة</th>
                   <th className="p-4 text-center">
-                    <span className="text-sm font-black text-purple-400">Execra</span>
+                    <span className="text-sm font-black text-purple-400 bg-purple-500/10 px-3 py-1 rounded-lg">Execra</span>
                   </th>
-                  <th className="p-4 text-center text-sm font-bold text-slate-600">Bardeen</th>
                   <th className="p-4 text-center text-sm font-bold text-slate-600">Zapier</th>
+                  <th className="p-4 text-center text-sm font-bold text-slate-600">Make</th>
                   <th className="p-4 text-center text-sm font-bold text-slate-600">UiPath</th>
                 </tr>
               </thead>
@@ -262,8 +266,8 @@ export const LandingPage: React.FC = () => {
                       <p className="text-sm font-bold text-white">{row.feature}</p>
                       <p className="text-xs text-slate-600" dir="rtl">{row.featureAr}</p>
                     </td>
-                    {[row.autopilot, row.bardeen, row.zapier, row.uipath].map((val, j) => (
-                      <td key={j} className="p-4 text-center">
+                    {[row.execra, row.zapier, row.make, row.uipath].map((val, j) => (
+                      <td key={j} className={`p-4 text-center ${j === 0 ? 'bg-purple-500/5' : ''}`}>
                         {val === true ? (
                           <Check className={`w-5 h-5 mx-auto ${j === 0 ? 'text-emerald-400' : 'text-slate-500'}`} />
                         ) : val === 'partial' ? (
