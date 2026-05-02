@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import i18n from './i18n/i18n';
 import { Layout } from './components/layout/Layout';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
@@ -58,6 +59,17 @@ class ErrorBoundary extends React.Component<
 }
 
 function App() {
+  // Apply saved language + theme on first render (no flash)
+  useEffect(() => {
+    const lang = localStorage.getItem('language') || 'ar';
+    i18n.changeLanguage(lang);
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+
+    const theme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, []);
+
   return (
     <ErrorBoundary>
     <QueryClientProvider client={queryClient}>

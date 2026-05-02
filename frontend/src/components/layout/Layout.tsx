@@ -43,11 +43,15 @@ export const Layout: React.FC = () => {
 
   useEffect(() => {
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-  }, [isRTL]);
+    document.documentElement.lang = i18n.language;
+  }, [isRTL, i18n.language]);
 
   const toggleLanguage = () => {
     const next = isRTL ? 'en' : 'ar';
     i18n.changeLanguage(next);
+    localStorage.setItem('language', next);
+    document.documentElement.dir = next === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = next;
   };
 
   useEffect(() => {
