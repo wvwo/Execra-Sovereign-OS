@@ -2,23 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { Workflow } from '../types';
 import { motion } from 'framer-motion';
-import { 
-  Plus, 
-  Play, 
-  Edit3, 
-  Trash2, 
-  Clock, 
+import {
+  Plus,
+  Play,
+  Edit3,
+  Trash2,
+  Clock,
   ExternalLink,
   Search,
   Filter,
   MoreVertical,
-  Activity
+  Activity,
+  Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const WorkflowsPage: React.FC = () => {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [runningId, setRunningId] = useState<string | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,12 +33,22 @@ export const WorkflowsPage: React.FC = () => {
       const res = await api.get('/workflows');
       const data = res.data;
       setWorkflows(Array.isArray(data) ? data : data.workflows || []);
-
     } catch (err) {
       console.error('Failed to fetch workflows', err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRun = (wfId: string) => {
+    setRunningId(wfId);
+    setRunError(null);
+    // ExecutionPage fetches workflow by id and shows a Run button to start
+    navigate(`/execute/${wfId}`);
+  };
+
+  const handleEdit = (wfId: string) => {
+    navigate(`/editor/${wfId}`);
   };
 
   const container = {
@@ -137,7 +150,9 @@ export const WorkflowsPage: React.FC = () => {
                   <div className={`w-3 h-3 rounded-full ${wf.status === 'active' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-600'} animate-pulse`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-black text-white truncate">{wf.workflow_title}</h3>
+                  <h3 className="text-lg font-black text-white truncate">
+                    {wf.workflow_title || wf.title || (wf as any).name || 'Untitled Workflow'}
+                  </h3>
                   <div className="flex items-center gap-2 mt-1">
                     <ExternalLink className="w-3 h-3 text-slate-500" />
                     <p className="text-xs text-slate-500 truncate">{wf.start_url}</p>
@@ -148,7 +163,7 @@ export const WorkflowsPage: React.FC = () => {
               <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/5">
                 <div className="text-center">
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Steps</p>
-                  <p className="text-sm font-bold text-white mt-1">{wf.steps.length}</p>
+                  <p className="text-sm font-bold text-white mt-1">{wf.steps?.length ?? 0}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</p>
@@ -161,14 +176,18 @@ export const WorkflowsPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-3 mt-6">
-                <button 
-                  onClick={() => navigate(`/execute/${wf.id}`)}
-                  className="bg-white/5 hover:bg-purple-600/10 hover:text-purple-400 border border-white/5 hover:border-purple-500/20 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                <button
+                  onClick={() => handleRun(wf.id)}
+                  disabled={runningId === wf.id}
+                  className="bg-white/5 hover:bg-purple-600/10 hover:text-purple-400 border border-white/5 hover:border-purple-500/20 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  <Play className="w-4 h-4" /> Run Agent
+                  {runningId === wf.id
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <Play className="w-4 h-4" />}
+                  Run Agent
                 </button>
-                <button 
-                  onClick={() => navigate(`/editor/${wf.id}`)}
+                <button
+                  onClick={() => handleEdit(wf.id)}
                   className="bg-white/5 hover:bg-blue-600/10 hover:text-blue-400 border border-white/5 hover:border-blue-500/20 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
                 >
                   <Edit3 className="w-4 h-4" /> Edit Script
