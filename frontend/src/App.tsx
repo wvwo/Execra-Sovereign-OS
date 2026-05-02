@@ -26,8 +26,40 @@ const queryClient = new QueryClient({
   },
 });
 
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('App error boundary caught:', error, info);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen bg-[#0B0F14] text-white gap-4">
+          <div className="text-5xl">⚠️</div>
+          <h2 className="text-xl font-black text-red-400">Something went wrong</h2>
+          <p className="text-slate-400 text-sm max-w-sm text-center">
+            {(this.state.error as Error).message}
+          </p>
+          <button
+            onClick={() => { this.setState({ error: null }); window.location.href = '/dashboard'; }}
+            className="mt-4 px-6 py-3 bg-purple-600 rounded-xl font-bold hover:bg-purple-500 transition-colors"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App() {
   return (
+    <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
@@ -59,6 +91,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
